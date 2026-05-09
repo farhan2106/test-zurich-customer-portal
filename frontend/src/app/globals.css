@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: zurich --default;
+}
+@plugin "daisyui/theme" {
+  name: "zurich";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #FFFFFF;
+  --color-base-200: #F3F4F6;
+  --color-base-300: #E5E7EB;
+  --color-base-content: #1A1A1A;
+
+  --color-primary: #005DAA;
+  --color-primary-content: #FFFFFF;
+
+  --color-secondary: #64748B;
+  --color-secondary-content: #FFFFFF;
+
+  --color-accent: #059669;
+  --color-accent-content: #FFFFFF;
+
+  --color-neutral: #1A1A1A;
+  --color-neutral-content: #FFFFFF;
+
+  --color-info: #3B82F6;
+  --color-info-content: #FFFFFF;
+
+  --color-success: #059669;
+  --color-success-content: #FFFFFF;
+
+  --color-warning: #D97706;
+  --color-warning-content: #FFFFFF;
+
+  --color-error: #DC2626;
+  --color-error-content: #FFFFFF;
+}
