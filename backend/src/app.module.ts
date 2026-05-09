@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
 import { Customer } from './entities/customer.entity';
 import { Product } from './entities/product.entity';
 import { Policy } from './entities/policy.entity';
@@ -20,6 +21,7 @@ import { Claim } from './entities/claim.entity';
       synchronize: true,
     }),
     TypeOrmModule.forFeature([Customer, Product, Policy, Claim]),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
