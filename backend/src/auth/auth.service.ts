@@ -24,12 +24,15 @@ export class AuthService {
     const payload = {
       sub: customer.id,
       email: customer.email,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      photoUrl: customer.photoUrl,
       role: customer.role,
     };
     return this.jwtService.sign(payload, { expiresIn: '24h' });
   }
 
-  async validateGoogleUser(profile: GoogleProfile): Promise<Customer> {
+  async validateOrCreateUser(profile: GoogleProfile): Promise<Customer> {
     let customer = await this.customerRepository.findOne({
       where: { email: profile.email },
     });
@@ -47,5 +50,9 @@ export class AuthService {
     }
 
     return customer;
+  }
+
+  async validateGoogleUser(profile: GoogleProfile): Promise<Customer> {
+    return this.validateOrCreateUser(profile);
   }
 }
