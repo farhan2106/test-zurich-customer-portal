@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { Customer } from './entities/customer.entity';
+import { Product } from './entities/product.entity';
+import { Policy } from './entities/policy.entity';
+import { Claim } from './entities/claim.entity';
 
 @Module({
   imports: [
@@ -15,6 +19,7 @@ import { AppService } from './app.service';
       autoLoadEntities: true,
       synchronize: true,
     }),
+    TypeOrmModule.forFeature([Customer, Product, Policy, Claim]),
   ],
   controllers: [AppController],
   providers: [AppService],
