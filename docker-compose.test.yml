@@ -1,0 +1,20 @@
+services:
+  postgres_test:
+    image: postgres:16-alpine
+    container_name: zurich_postgres_test
+    environment:
+      POSTGRES_USER: zurich_test
+      POSTGRES_PASSWORD: zurich_test_pass
+      POSTGRES_DB: CUSTOMER_BILLING_PORTAL_TEST
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zurich_test -d CUSTOMER_BILLING_PORTAL_TEST"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_test_data:
