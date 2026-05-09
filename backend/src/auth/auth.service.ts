@@ -52,6 +52,10 @@ export class AuthService {
     return customer;
   }
 
+  async findByEmail(email: string): Promise<Customer | null> {
+    return this.customerRepository.findOne({ where: { email } });
+  }
+
   async validateGoogleUser(profile: GoogleProfile): Promise<Customer> {
     return this.validateOrCreateUser(profile);
   }
