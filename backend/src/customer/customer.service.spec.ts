@@ -7,7 +7,7 @@ import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
 import { Customer } from '../entities/customer.entity';
 import { Claim } from '../entities/claim.entity';
-import { ProductStatus, PolicyStatus, CustomerLocation, ClaimType, ClaimStatus } from '../entities/enums';
+import { ProductStatus, PolicyStatus, CustomerLocation, CustomerRole, ClaimType, ClaimStatus } from '../entities/enums';
 
 describe('CustomerService', () => {
   let service: CustomerService;
@@ -1252,6 +1252,195 @@ describe('CustomerService', () => {
         relations: ['policy'],
         order: { createdAt: 'DESC' },
       });
+    });
+  });
+
+  describe('findAllCustomers()', () => {
+    let customerRepo: jest.Mocked<Repository<Customer>>;
+
+    const mockCustomers: Customer[] = [
+      {
+        id: 'usr_001',
+        email: 'john@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        photoUrl: null,
+        location: CustomerLocation.WEST_MALAYSIA,
+        premiumPaid: 1500.50,
+        role: CustomerRole.CUSTOMER,
+        createdAt: new Date('2025-01-01'),
+        updatedAt: new Date('2025-06-15'),
+        policies: [],
+        claims: [],
+      },
+      {
+        id: 'usr_002',
+        email: 'jane@example.com',
+        firstName: 'Jane',
+        lastName: 'Smith',
+        photoUrl: 'https://example.com/jane.jpg',
+        location: CustomerLocation.EAST_MALAYSIA,
+        premiumPaid: 0,
+        role: CustomerRole.CUSTOMER,
+        createdAt: new Date('2025-02-01'),
+        updatedAt: new Date('2025-07-01'),
+        policies: [],
+        claims: [],
+      },
+      {
+        id: 'usr_003',
+        email: 'admin@example.com',
+        firstName: 'Admin',
+        lastName: 'User',
+        photoUrl: null,
+        location: CustomerLocation.WEST_MALAYSIA,
+        premiumPaid: 0,
+        role: CustomerRole.ADMIN,
+        createdAt: new Date('2025-01-01'),
+        updatedAt: new Date('2025-01-01'),
+        policies: [],
+        claims: [],
+      },
+    ];
+
+    beforeEach(async () => {
+      const mockProductRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const mockPolicyRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockCustomerRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const mockClaimRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CustomerService,
+          {
+            provide: getRepositoryToken(Product),
+            useValue: mockProductRepo,
+          },
+          {
+            provide: getRepositoryToken(Policy),
+            useValue: mockPolicyRepo,
+          },
+          {
+            provide: getRepositoryToken(Customer),
+            useValue: mockCustomerRepo,
+          },
+          {
+            provide: getRepositoryToken(Claim),
+            useValue: mockClaimRepo,
+          },
+        ],
+      }).compile();
+
+      service = module.get<CustomerService>(CustomerService);
+      customerRepo = module.get(getRepositoryToken(Customer));
+    });
+
+    it('should return all customers when no filters provided', async () => {
+      customerRepo.find.mockResolvedValue(mockCustomers);
+
+      const result = await service.findAllCustomers({});
+
+      expect(customerRepo.find).toHaveBeenCalledWith({
+        where: {},
+      });
+      expect(result).toEqual(mockCustomers);
+    });
+
+    it('should filter by search matching firstName', async () => {
+      customerRepo.find.mockResolvedValue([mockCustomers[0]]);
+
+      const result = await service.findAllCustomers({ search: 'John' });
+
+      expect(customerRepo.find).toHaveBeenCalledWith({
+        where: expect.arrayContaining([
+          expect.objectContaining({ firstName: expect.any(Object) }),
+        ]),
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0].firstName).toBe('John');
+    });
+
+    it('should filter by search matching lastName', async () => {
+      customerRepo.find.mockResolvedValue([mockCustomers[1]]);
+
+      const result = await service.findAllCustomers({ search: 'Smith' });
+
+      expect(customerRepo.find).toHaveBeenCalledWith({
+        where: expect.arrayContaining([
+          expect.objectContaining({ lastName: expect.any(Object) }),
+        ]),
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0].lastName).toBe('Smith');
+    });
+
+    it('should filter by search matching email', async () => {
+      customerRepo.find.mockResolvedValue([mockCustomers[0]]);
+
+      const result = await service.findAllCustomers({ search: 'john@example.com' });
+
+      expect(customerRepo.find).toHaveBeenCalledWith({
+        where: expect.arrayContaining([
+          expect.objectContaining({ email: expect.any(Object) }),
+        ]),
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0].email).toBe('john@example.com');
+    });
+
+    it('should filter by location', async () => {
+      customerRepo.find.mockResolvedValue([mockCustomers[1]]);
+
+      const result = await service.findAllCustomers({ location: CustomerLocation.EAST_MALAYSIA });
+
+      expect(customerRepo.find).toHaveBeenCalledWith({
+        where: { location: CustomerLocation.EAST_MALAYSIA },
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0].location).toBe(CustomerLocation.EAST_MALAYSIA);
+    });
+
+    it('should combine search and location filters', async () => {
+      customerRepo.find.mockResolvedValue([mockCustomers[0]]);
+
+      const result = await service.findAllCustomers({
+        search: 'John',
+        location: CustomerLocation.WEST_MALAYSIA,
+      });
+
+      expect(customerRepo.find).toHaveBeenCalledWith({
+        where: expect.arrayContaining([
+          expect.objectContaining({ location: CustomerLocation.WEST_MALAYSIA }),
+        ]),
+      });
+      expect(result).toHaveLength(1);
+    });
+
+    it('should return empty array when no matches', async () => {
+      customerRepo.find.mockResolvedValue([]);
+
+      const result = await service.findAllCustomers({ search: 'NonExistent' });
+
+      expect(result).toEqual([]);
     });
   });
 

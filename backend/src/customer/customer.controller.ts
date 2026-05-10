@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Param, Body, UseGuards, Req } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { CustomerService } from './customer.service';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { CreatePolicyDto } from './dto/create-policy.dto';
@@ -7,6 +7,10 @@ import { PolicyResponseDto } from './dto/policy-response.dto';
 import { CreateClaimDto } from './dto/create-claim.dto';
 import { ClaimResponseDto } from './dto/claim-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { CustomerResponseDto } from './dto/customer-response.dto';
+import { CustomerLocation } from '../entities/enums';
 import type { Request } from 'express';
 import { JwtUser } from '../auth/jwt.strategy';
 
@@ -127,5 +131,25 @@ export class ClaimsController {
     const user = req.user as JwtUser;
     const claim = await this.customerService.findClaimById(id, user.sub);
     return ClaimResponseDto.fromEntity(claim);
+  }
+}
+
+@ApiTags('Admin Customers')
+@Controller('api/customers')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class AdminCustomerController {
+  constructor(private readonly customerService: CustomerService) {}
+
+  @Get()
+  @Roles('admin')
+  @ApiOperation({ summary: 'List all customers (admin)' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by firstName, lastName, or email' })
+  @ApiQuery({ name: 'location', required: false, description: 'Filter by location', enum: CustomerLocation })
+  @ApiResponse({ status: 200, description: 'List of customers', type: [CustomerResponseDto] })
+  @ApiResponse({ status: 403, description: 'Forbidden - requires admin role' })
+  async listCustomers(@Query() filters: { search?: string; location?: string }): Promise<CustomerResponseDto[]> {
+    const customers = await this.customerService.findAllCustomers(filters);
+    return customers.map(c => CustomerResponseDto.fromEntity(c));
   }
 }

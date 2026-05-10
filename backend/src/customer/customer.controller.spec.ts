@@ -1,19 +1,21 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
-import { CustomerController, PolicyController, ClaimsController } from './customer.controller';
+import { CustomerController, PolicyController, ClaimsController, AdminCustomerController } from './customer.controller';
 import { CustomerService } from './customer.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { PolicyResponseDto } from './dto/policy-response.dto';
 import { ClaimResponseDto } from './dto/claim-response.dto';
+import { CustomerResponseDto } from './dto/customer-response.dto';
 import { CreatePolicyDto } from './dto/create-policy.dto';
 import { CreateClaimDto } from './dto/create-claim.dto';
 import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
 import { Customer } from '../entities/customer.entity';
 import { Claim } from '../entities/claim.entity';
-import { ProductStatus, PolicyStatus, CustomerLocation, ClaimType, ClaimStatus } from '../entities/enums';
+import { ProductStatus, PolicyStatus, CustomerLocation, CustomerRole, ClaimType, ClaimStatus } from '../entities/enums';
 
 import type { Request } from 'express';
 import { JwtUser } from '../auth/jwt.strategy';
@@ -1177,6 +1179,205 @@ describe('CustomerController', () => {
       const metadata = Reflect.getMetadata(
         'swagger/apiOperation',
         ClaimsController.prototype.detail,
+      );
+      expect(metadata).toBeDefined();
+    });
+  });
+
+  describe('GET /api/customers (admin list)', () => {
+    let adminController: AdminCustomerController;
+
+    const mockCustomers: Customer[] = [
+      {
+        id: 'usr_001',
+        email: 'john@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        photoUrl: null,
+        location: CustomerLocation.WEST_MALAYSIA,
+        premiumPaid: 1500.50,
+        role: CustomerRole.CUSTOMER,
+        createdAt: new Date('2025-01-01'),
+        updatedAt: new Date('2025-06-15'),
+        policies: [],
+        claims: [],
+      },
+      {
+        id: 'usr_002',
+        email: 'jane@example.com',
+        firstName: 'Jane',
+        lastName: 'Smith',
+        photoUrl: 'https://example.com/jane.jpg',
+        location: CustomerLocation.EAST_MALAYSIA,
+        premiumPaid: 0,
+        role: CustomerRole.CUSTOMER,
+        createdAt: new Date('2025-02-01'),
+        updatedAt: new Date('2025-07-01'),
+        policies: [],
+        claims: [],
+      },
+    ];
+
+    const mockCustomerResponses: CustomerResponseDto[] = mockCustomers.map((c) =>
+      CustomerResponseDto.fromEntity(c),
+    );
+
+    beforeEach(async () => {
+      const mockService = {
+        findAllActiveProducts: jest.fn(),
+        findProductById: jest.fn(),
+        purchasePolicy: jest.fn(),
+        findPoliciesByCustomerId: jest.fn(),
+        findPolicyById: jest.fn(),
+        renewPolicy: jest.fn(),
+        submitClaim: jest.fn(),
+        findClaimsByCustomerId: jest.fn(),
+        findClaimById: jest.fn(),
+        findAllCustomers: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [CustomerController, PolicyController, ClaimsController, AdminCustomerController],
+        providers: [
+          {
+            provide: CustomerService,
+            useValue: mockService,
+          },
+        ],
+      })
+        .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: jest.fn(() => true) })
+        .overrideGuard(RolesGuard)
+        .useValue({ canActivate: jest.fn(() => true) })
+        .compile();
+
+      adminController = module.get<AdminCustomerController>(AdminCustomerController);
+      customerService = module.get(CustomerService);
+    });
+
+    it('should return 200 with CustomerResponseDto[] for admin', async () => {
+      customerService.findAllCustomers.mockResolvedValue(mockCustomers);
+
+      const result = await adminController.listCustomers({});
+
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith({});
+      expect(result).toBeInstanceOf(Array);
+      expect(result.length).toBe(2);
+      expect(result[0]).toBeInstanceOf(CustomerResponseDto);
+      expect(result[0]).toEqual(mockCustomerResponses[0]);
+    });
+
+    it('should accept search query param and pass to service', async () => {
+      customerService.findAllCustomers.mockResolvedValue([mockCustomers[0]]);
+
+      const result = await adminController.listCustomers({ search: 'John' });
+
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith({ search: 'John' });
+      expect(result).toHaveLength(1);
+    });
+
+    it('should accept location query param and pass to service', async () => {
+      customerService.findAllCustomers.mockResolvedValue([mockCustomers[1]]);
+
+      const result = await adminController.listCustomers({ location: CustomerLocation.EAST_MALAYSIA });
+
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith({
+        location: CustomerLocation.EAST_MALAYSIA,
+      });
+      expect(result).toHaveLength(1);
+    });
+
+    it('should accept both search and location query params', async () => {
+      customerService.findAllCustomers.mockResolvedValue([mockCustomers[0]]);
+
+      const result = await adminController.listCustomers({
+        search: 'John',
+        location: CustomerLocation.WEST_MALAYSIA,
+      });
+
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith({
+        search: 'John',
+        location: CustomerLocation.WEST_MALAYSIA,
+      });
+      expect(result).toHaveLength(1);
+    });
+
+    it('should handle default case with no params', async () => {
+      customerService.findAllCustomers.mockResolvedValue(mockCustomers);
+
+      const result = await adminController.listCustomers({});
+
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith({});
+      expect(result).toHaveLength(2);
+    });
+
+    it('should return empty array when no customers match', async () => {
+      customerService.findAllCustomers.mockResolvedValue([]);
+
+      const result = await adminController.listCustomers({ search: 'NonExistent' });
+
+      expect(result).toEqual([]);
+    });
+
+    it('should have JwtAuthGuard applied', () => {
+      const classGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        AdminCustomerController,
+      );
+      const methodGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        AdminCustomerController.prototype.listCustomers,
+      );
+
+      const allGuards = [...(classGuards || []), ...(methodGuards || [])];
+
+      expect(allGuards.length).toBeGreaterThan(0);
+      const hasJwtGuard = allGuards.some(
+        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+      );
+      expect(hasJwtGuard).toBe(true);
+    });
+
+    it('should have RolesGuard applied', () => {
+      const classGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        AdminCustomerController,
+      );
+      const methodGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        AdminCustomerController.prototype.listCustomers,
+      );
+
+      const allGuards = [...(classGuards || []), ...(methodGuards || [])];
+
+      expect(allGuards.length).toBeGreaterThan(0);
+      const hasRolesGuard = allGuards.some(
+        (g: any) => g === RolesGuard || (g instanceof RolesGuard),
+      );
+      expect(hasRolesGuard).toBe(true);
+    });
+
+    it('should have @Roles("admin") decorator applied', () => {
+      const rolesMetadata = Reflect.getMetadata(
+        'roles',
+        AdminCustomerController.prototype.listCustomers,
+      );
+      expect(rolesMetadata).toBeDefined();
+      expect(rolesMetadata).toContain('admin');
+    });
+
+    it('should have @ApiOperation decorator', () => {
+      const metadata = Reflect.getMetadata(
+        'swagger/apiOperation',
+        AdminCustomerController.prototype.listCustomers,
+      );
+      expect(metadata).toBeDefined();
+    });
+
+    it('should have @ApiResponse(200) decorator', () => {
+      const metadata = Reflect.getMetadata(
+        'swagger/apiResponse',
+        AdminCustomerController.prototype.listCustomers,
       );
       expect(metadata).toBeDefined();
     });

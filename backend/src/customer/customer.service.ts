@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
 import { Customer } from '../entities/customer.entity';
@@ -181,6 +181,28 @@ export class CustomerService {
       where: { customerId },
       relations: ['policy'],
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findAllCustomers(filters?: { search?: string; location?: string }): Promise<Customer[]> {
+    const where: any = {};
+
+    if (filters?.location) {
+      where.location = filters.location;
+    }
+
+    if (filters?.search) {
+      return this.customerRepository.find({
+        where: [
+          { ...where, firstName: Like(`%${filters.search}%`) },
+          { ...where, lastName: Like(`%${filters.search}%`) },
+          { ...where, email: Like(`%${filters.search}%`) },
+        ],
+      });
+    }
+
+    return this.customerRepository.find({
+      where,
     });
   }
 
