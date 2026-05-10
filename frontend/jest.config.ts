@@ -8,8 +8,10 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|scss|sass)$': 'identity-obj-proxy',
+    '^next/navigation$': '<rootDir>/src/__mocks__/next-navigation.ts',
+    '^@/services/api-client$': '<rootDir>/src/__mocks__/api-client.ts',
   },
-  setupFiles: ['<rootDir>/jest.setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   rootDir: '.',
