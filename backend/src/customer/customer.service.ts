@@ -4,7 +4,9 @@ import { Repository } from 'typeorm';
 import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
 import { Customer } from '../entities/customer.entity';
-import { ProductStatus, PolicyStatus, CustomerLocation } from '../entities/enums';
+import { Claim } from '../entities/claim.entity';
+import { ProductStatus, PolicyStatus, CustomerLocation, ClaimType, ClaimStatus } from '../entities/enums';
+import { CreateClaimDto } from './dto/create-claim.dto';
 
 @Injectable()
 export class CustomerService {
@@ -15,6 +17,8 @@ export class CustomerService {
     private readonly policyRepository: Repository<Policy>,
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+    @InjectRepository(Claim)
+    private readonly claimRepository: Repository<Claim>,
   ) {}
 
   async findAllActiveProducts(): Promise<Product[]> {
@@ -133,5 +137,42 @@ export class CustomerService {
     policy.endDate = new Date(endDate.getTime() + 365 * 24 * 60 * 60 * 1000);
 
     return this.policyRepository.save(policy);
+  }
+
+  async submitClaim(customerId: string, dto: CreateClaimDto): Promise<Claim> {
+    const policy = await this.policyRepository.findOne({
+      where: { id: dto.policyId },
+    });
+
+    if (!policy) {
+      throw new NotFoundException('Policy not found');
+    }
+
+    if (policy.customerId !== customerId) {
+      throw new ForbiddenException('Policy does not belong to this customer');
+    }
+
+    if (policy.status !== PolicyStatus.ACTIVE) {
+      throw new BadRequestException('Claims can only be submitted against active policies');
+    }
+
+    // Generate claim number
+    const today = new Date();
+    const datePart = today.toISOString().slice(0, 10).replace(/-/g, '');
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const claimNumber = `CLM-${datePart}-${randomNum}`;
+
+    const claim = this.claimRepository.create({
+      claimNumber,
+      customerId,
+      policyId: dto.policyId,
+      type: dto.type,
+      description: dto.description,
+      incidentDate: new Date(dto.incidentDate),
+      incidentLocation: dto.incidentLocation || null,
+      status: ClaimStatus.SUBMITTED,
+    });
+
+    return this.claimRepository.save(claim);
   }
 }

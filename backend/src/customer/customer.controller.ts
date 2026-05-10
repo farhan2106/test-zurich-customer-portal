@@ -4,6 +4,8 @@ import { CustomerService } from './customer.service';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { CreatePolicyDto } from './dto/create-policy.dto';
 import { PolicyResponseDto } from './dto/policy-response.dto';
+import { CreateClaimDto } from './dto/create-claim.dto';
+import { ClaimResponseDto } from './dto/claim-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Request } from 'express';
 import { JwtUser } from '../auth/jwt.strategy';
@@ -84,5 +86,25 @@ export class PolicyController {
     const user = req.user as JwtUser;
     const policy = await this.customerService.renewPolicy(id, user.sub);
     return PolicyResponseDto.fromEntity(policy);
+  }
+}
+
+@ApiTags('Claims')
+@Controller('api/claims')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class ClaimsController {
+  constructor(private readonly customerService: CustomerService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Submit a new claim' })
+  @ApiResponse({ status: 201, description: 'Claim submitted', type: ClaimResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid request' })
+  @ApiResponse({ status: 403, description: 'Policy does not belong to customer' })
+  @ApiResponse({ status: 404, description: 'Policy not found' })
+  async create(@Req() req: Request, @Body() dto: CreateClaimDto): Promise<ClaimResponseDto> {
+    const user = req.user as JwtUser;
+    const claim = await this.customerService.submitClaim(user.sub, dto);
+    return ClaimResponseDto.fromEntity(claim);
   }
 }
