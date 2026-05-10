@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@/test-utils';
+import { render, screen, fireEvent, waitFor, act } from '@/test-utils';
 import * as policyService from '@/services/policy.service';
 import * as nextNavigation from 'next/navigation';
 
@@ -71,14 +71,20 @@ const mockPolicies = [
 
 const authenticatedState = {
   auth: {
-    user: { id: 'cust_1', email: 'test@example.com', firstName: 'John', lastName: 'Doe', role: 'customer' },
+    user: {
+      id: 'cust_1',
+      email: 'test@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      role: 'customer',
+    },
     token: 'test-token',
     isLoading: false,
     error: null,
   },
 };
 
-// Import the page component (will fail until implemented)
+// Import the page component
 import DashboardPage from '@/app/dashboard/page';
 
 describe('Dashboard Page', () => {
@@ -86,10 +92,12 @@ describe('Dashboard Page', () => {
     jest.clearAllMocks();
   });
 
-  it('dispatches fetchPolicies on mount', () => {
+  it('dispatches fetchPolicies on mount', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue(mockPolicies);
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
+    });
 
     expect(mockedPolicyService.getPolicies).toHaveBeenCalled();
   });
@@ -97,53 +105,56 @@ describe('Dashboard Page', () => {
   it('shows policy cards with product name, policy number, coverage dates, premium, and status badge', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue(mockPolicies);
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
-
-    await waitFor(() => {
-      expect(screen.getByText('Auto Insurance')).toBeInTheDocument();
-      expect(screen.getByText('POL-001')).toBeInTheDocument();
-      expect(screen.getByText('2026-01-01')).toBeInTheDocument();
-      expect(screen.getByText('2027-01-01')).toBeInTheDocument();
-      expect(screen.getByText('RM 1,500')).toBeInTheDocument();
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
     });
+
+    expect(screen.getByText('Auto Insurance')).toBeInTheDocument();
+    expect(screen.getByText('POL-001')).toBeInTheDocument();
+    expect(screen.getByText('2026-01-01')).toBeInTheDocument();
+    expect(screen.getByText('2027-01-01')).toBeInTheDocument();
+    expect(screen.getByText('RM 1,500')).toBeInTheDocument();
   });
 
   it('shows active policy with green badge (badge-success)', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue([mockPolicies[0]]);
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
-
-    await waitFor(() => {
-      const badge = screen.getByText('Active');
-      expect(badge).toHaveClass('badge-success');
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
     });
+
+    const badge = screen.getByText('Active');
+    expect(badge).toHaveClass('badge-success');
   });
 
   it('shows expired policy with gray badge (badge-ghost)', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue([mockPolicies[1]]);
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
-
-    await waitFor(() => {
-      const badge = screen.getByText('Expired');
-      expect(badge).toHaveClass('badge-ghost');
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
     });
+
+    const badge = screen.getByText('Expired');
+    expect(badge).toHaveClass('badge-ghost');
   });
 
   it('shows empty state with "You don\'t have any policies yet" and "Browse Products" link to /products', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue([]);
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
-
-    await waitFor(() => {
-      expect(screen.getByText("You don't have any policies yet")).toBeInTheDocument();
-      const browseLink = screen.getByRole('link', { name: /browse products/i });
-      expect(browseLink).toHaveAttribute('href', '/products');
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
     });
+
+    expect(screen.getByText("You don't have any policies yet")).toBeInTheDocument();
+
+    const browseLink = screen.getByRole('link', {
+      name: /browse products/i,
+    });
+
+    expect(browseLink).toHaveAttribute('href', '/products');
   });
 
   it('shows loading state with skeleton cards', () => {
-    // Keep the promise pending to simulate loading
     mockedPolicyService.getPolicies.mockReturnValue(new Promise(() => {}));
 
     render(<DashboardPage />, { preloadedState: authenticatedState });
@@ -153,68 +164,82 @@ describe('Dashboard Page', () => {
   });
 
   it('shows error state with "Unable to load your portfolio" and retry button', async () => {
-    mockedPolicyService.getPolicies.mockRejectedValue(new Error('Network error'));
+    mockedPolicyService.getPolicies.mockRejectedValue(
+      new Error('Network error')
+    );
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
-
-    await waitFor(() => {
-      expect(screen.getByText('Unable to load your portfolio')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
     });
+
+    expect(
+      screen.getByText('Unable to load your portfolio')
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('button', { name: /retry/i })
+    ).toBeInTheDocument();
   });
 
   it('shows summary section with total policies count and active count', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue(mockPolicies);
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
-
-    await waitFor(() => {
-      expect(screen.getByText(/total policies/i)).toBeInTheDocument();
-      expect(screen.getByText('2')).toBeInTheDocument();
-      expect(screen.getByText(/active policies/i)).toBeInTheDocument();
-      expect(screen.getByText('1')).toBeInTheDocument();
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
     });
+
+    expect(screen.getByText(/total policies/i)).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+
+    expect(screen.getByText(/active policies/i)).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
   });
 
   it('shows "Submit Claim" button on active policies', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue([mockPolicies[0]]);
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /submit claim/i })).toBeInTheDocument();
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
     });
+
+    expect(
+      screen.getByRole('button', { name: /submit claim/i })
+    ).toBeInTheDocument();
   });
 
   it('does NOT show claim button on expired policies', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue([mockPolicies[1]]);
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
-
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /submit claim/i })).not.toBeInTheDocument();
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
     });
+
+    expect(
+      screen.queryByRole('button', { name: /submit claim/i })
+    ).not.toBeInTheDocument();
   });
 
   it('shows navigation links to /products', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue(mockPolicies);
 
-    render(<DashboardPage />, { preloadedState: authenticatedState });
-
-    await waitFor(() => {
-      const productsLink = screen.getByRole('link', { name: /products/i });
-      expect(productsLink).toHaveAttribute('href', '/products');
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
     });
+
+    const productsLink = screen.getByRole('link', {
+      name: /products/i,
+    });
+
+    expect(productsLink).toHaveAttribute('href', '/products');
   });
 
-  it('renders as a protected route (ProtectedRoute is used)', () => {
+  it('renders as a protected route (ProtectedRoute is used)', async () => {
     mockedPolicyService.getPolicies.mockResolvedValue(mockPolicies);
 
-    // ProtectedRoute will render children when authenticated
-    render(<DashboardPage />, { preloadedState: authenticatedState });
+    await act(async () => {
+      render(<DashboardPage />, { preloadedState: authenticatedState });
+    });
 
-    // If ProtectedRoute is used, the page content should render
-    // (test will fail if ProtectedRoute is not wrapping the page)
     expect(screen.getByRole('main')).toBeInTheDocument();
   });
 });

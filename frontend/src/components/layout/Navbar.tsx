@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { useState } from 'react';
@@ -24,6 +24,7 @@ export function Navbar() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const router = useRouter();
 
   const visibleLinks = NAV_LINKS.filter(
     (link) => !link.adminOnly || user?.role === 'admin',
@@ -33,7 +34,7 @@ export function Navbar() {
 
   const handleSignOut = () => {
     dispatch(logout());
-    window.location.href = '/login';
+    router.push('/login');
   };
 
   return (

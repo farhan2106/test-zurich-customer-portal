@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from '@/test-utils';
+import React from 'react';
+import { render, screen, waitFor, act } from '@/test-utils';
 import { useParams } from 'next/navigation';
 import * as policyService from '@/services/policy.service';
 
@@ -87,50 +88,51 @@ describe('PolicyDetailPage', () => {
 
   describe('initial load', () => {
     it('dispatches fetchPolicyById on mount with correct id', async () => {
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: { items: [], isLoading: false, error: null },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: { items: [], isLoading: false, error: null },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        expect(mockUseParams).toHaveBeenCalled();
-      });
+      expect(mockUseParams).toHaveBeenCalled();
     });
   });
 
   describe('policy details display', () => {
     it('displays policy number, product name, and status badge', async () => {
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: { items: [mockPolicy], isLoading: false, error: null },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: { items: [mockPolicy], isLoading: false, error: null },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        expect(screen.getByText('POL-2024-001')).toBeInTheDocument();
-      });
+      expect(screen.getByText('POL-2024-001')).toBeInTheDocument();
       expect(screen.getByText('Auto Insurance')).toBeInTheDocument();
       expect(screen.getByText('active')).toBeInTheDocument();
     });
 
     it('shows coverage dates (start/end), location, and annual premium', async () => {
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: { items: [mockPolicy], isLoading: false, error: null },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: { items: [mockPolicy], isLoading: false, error: null },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        const year2024Elements = screen.getAllByText(/2024/);
-        expect(year2024Elements.length).toBeGreaterThanOrEqual(2); // at least policy number + start date
-      });
+      const year2024Elements = screen.getAllByText(/2024/);
+      expect(year2024Elements.length).toBeGreaterThanOrEqual(2);
+
       expect(screen.getByText(/2025/)).toBeInTheDocument();
       expect(screen.getByText(/Kuala Lumpur/)).toBeInTheDocument();
       expect(screen.getByText(/1,500/)).toBeInTheDocument();
@@ -139,21 +141,24 @@ describe('PolicyDetailPage', () => {
 
   describe('action buttons', () => {
     it('shows "Submit Claim" button linking to /claims/new?policyId=pol_abc123', async () => {
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: { items: [mockPolicy], isLoading: false, error: null },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: { items: [mockPolicy], isLoading: false, error: null },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        const claimLink = screen.getByRole('link', { name: /Submit Claim/i });
-        expect(claimLink).toHaveAttribute(
-          'href',
-          '/claims/new?policyId=pol_abc123'
-        );
+      const claimLink = screen.getByRole('link', {
+        name: /Submit Claim/i,
       });
+
+      expect(claimLink).toHaveAttribute(
+        'href',
+        '/claims/new?policyId=pol_abc123'
+      );
     });
 
     it('shows "Renew Policy" button when within renewal window', async () => {
@@ -164,43 +169,45 @@ describe('PolicyDetailPage', () => {
           .split('T')[0],
       };
 
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: {
-            items: [policyNearExpiry],
-            isLoading: false,
-            error: null,
-          },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      mockedService.getPolicyById.mockResolvedValue(policyNearExpiry);
+
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: {
+              items: [policyNearExpiry],
+              isLoading: false,
+              error: null,
+            },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: /Renew Policy/i })
-        ).toBeInTheDocument();
-      });
+      expect(
+        screen.getByRole('button', { name: /Renew Policy/i })
+      ).toBeInTheDocument();
     });
 
     it('does NOT show "Renew Policy" button when policy expired', async () => {
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: {
-            items: [mockExpiredPolicy],
-            isLoading: false,
-            error: null,
-          },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: {
+              items: [mockExpiredPolicy],
+              isLoading: false,
+              error: null,
+            },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        expect(
-          screen.queryByRole('button', { name: /Renew Policy/i })
-        ).not.toBeInTheDocument();
-      });
+      expect(
+        screen.queryByRole('button', { name: /Renew Policy/i })
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -208,102 +215,117 @@ describe('PolicyDetailPage', () => {
     it('shows claims section with claim items when claims exist', async () => {
       mockedService.getPolicyById.mockResolvedValue(mockPolicyWithClaims);
 
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: {
-            items: [mockPolicyWithClaims],
-            isLoading: false,
-            error: null,
-          },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: {
+              items: [mockPolicyWithClaims],
+              isLoading: false,
+              error: null,
+            },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        expect(screen.getByText(/Claims/i)).toBeInTheDocument();
-      });
+      expect(screen.getByText(/Claims/i)).toBeInTheDocument();
       expect(screen.getByText('CLM-2024-001')).toBeInTheDocument();
       expect(screen.getByText('CLM-2024-002')).toBeInTheDocument();
       expect(screen.getByText(/Windshield damage/)).toBeInTheDocument();
     });
 
     it('shows "No claims submitted yet" empty state when claims is empty', async () => {
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: { items: [mockPolicy], isLoading: false, error: null },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: { items: [mockPolicy], isLoading: false, error: null },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        expect(screen.getByText(/No claims submitted yet/i)).toBeInTheDocument();
-      });
+      expect(
+        screen.getByText(/No claims submitted yet/i)
+      ).toBeInTheDocument();
     });
   });
 
   describe('loading and error states', () => {
-    it('shows skeleton loading state', () => {
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: { items: [], isLoading: true, error: null },
-        } as any,
-        additionalReducers: { policy: policyReducer },
-      });
+    it('shows skeleton loading state', async () => {
+      mockedService.getPolicyById.mockReturnValue(new Promise(() => {}));
+
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: { items: [], isLoading: true, error: null },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
+      })
 
       const skeletons = document.querySelectorAll('.skeleton');
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
     it('shows "Policy not found" error state', async () => {
-      mockedService.getPolicyById.mockRejectedValue(new Error('Failed to load'));
+      mockedService.getPolicyById.mockRejectedValue(
+        new Error('Failed to load')
+      );
 
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: { items: [], isLoading: false, error: 'Policy not found' },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: {
+              items: [],
+              isLoading: false,
+              error: 'Policy not found',
+            },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        expect(screen.getByText(/Policy not found/i)).toBeInTheDocument();
-      });
+      expect(screen.getByText(/Policy not found/i)).toBeInTheDocument();
     });
   });
 
   describe('navigation', () => {
     it('has "Back to Dashboard" link', async () => {
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: { items: [mockPolicy], isLoading: false, error: null },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: { items: [mockPolicy], isLoading: false, error: null },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        const backLink = screen.getByRole('link', { name: /Back to Dashboard/i });
-        expect(backLink).toHaveAttribute('href', '/dashboard');
+      const backLink = screen.getByRole('link', {
+        name: /Back to Dashboard/i,
       });
+
+      expect(backLink).toHaveAttribute('href', '/dashboard');
     });
   });
 
   describe('protected route', () => {
     it('renders ProtectedRoute wrapper', async () => {
-      render(<PolicyDetailPage />, {
-        preloadedState: {
-          ...authenticatedState,
-          policy: { items: [mockPolicy], isLoading: false, error: null },
-        } as any,
-        additionalReducers: { policy: policyReducer },
+      await act(async () => {
+        render(<PolicyDetailPage />, {
+          preloadedState: {
+            ...authenticatedState,
+            policy: { items: [mockPolicy], isLoading: false, error: null },
+          } as any,
+          additionalReducers: { policy: policyReducer },
+        });
       });
 
-      await waitFor(() => {
-        expect(screen.getByText('POL-2024-001')).toBeInTheDocument();
-      });
+      expect(screen.getByText('POL-2024-001')).toBeInTheDocument();
     });
   });
 });

@@ -21,18 +21,6 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }));
 
-// Suppress jsdom navigation errors from window.location.href
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args: unknown[]) => {
-    if (typeof args[0] === 'string' && args[0].includes('Not implemented: navigation')) return;
-    originalError(...args);
-  };
-});
-afterAll(() => {
-  console.error = originalError;
-});
-
 describe('Navbar', () => {
   const customerPreloadedState = {
     auth: {

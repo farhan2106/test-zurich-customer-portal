@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../index';
 import type { Policy } from '@/services/policy.service';
 import * as policyService from '@/services/policy.service';
@@ -113,9 +113,14 @@ export function selectPolicyById(
   return state.policy.items.find((p) => p.id === id);
 }
 
-export const selectPolicyLoadingState = (state: RootState) => ({
-  isLoading: state.policy.isLoading,
-  error: state.policy.error,
-});
+const selectPolicyState = (state: RootState) => state.policy;
+
+export const selectPolicyLoadingState = createSelector(
+  selectPolicyState,
+  (policy) => ({
+    isLoading: policy.isLoading,
+    error: policy.error,
+  })
+);
 
 export default policySlice.reducer;
