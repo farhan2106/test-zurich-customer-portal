@@ -40,6 +40,7 @@ const mockClaim = {
   id: 'clm_1',
   claimNumber: 'CLM-2024-001',
   type: 'Accident',
+  policyId: 'pol_1',
   policyNumber: 'POL-2024-001',
   status: 'submitted',
   incidentDate: '2024-06-15',
@@ -129,7 +130,7 @@ describe('Claim Detail Page', () => {
 
     const policyLink = screen.getByRole('link', { name: /POL-2024-001/i });
     expect(policyLink).toBeInTheDocument();
-    expect(policyLink).toHaveAttribute('href', '/policies/POL-2024-001');
+    expect(policyLink).toHaveAttribute('href', '/policies/pol_1');
   });
 
   it('shows description text', async () => {

@@ -170,7 +170,7 @@ export class CustomerService {
       type: dto.type,
       description: dto.description,
       incidentDate: new Date(dto.incidentDate),
-      incidentLocation: dto.incidentLocation || null,
+      incidentLocation: dto.incidentLocation || undefined,
       status: ClaimStatus.SUBMITTED,
     });
 

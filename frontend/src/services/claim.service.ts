@@ -4,6 +4,7 @@ export interface Claim {
   id: string;
   claimNumber: string;
   type: string;
+  policyId: string;
   policyNumber: string;
   status: string;
   incidentDate: string;
@@ -14,7 +15,7 @@ export interface Claim {
 
 export interface CreateClaimDto {
   type: string;
-  policyNumber: string;
+  policyId: string;
   incidentDate: string;
   description: string;
   incidentLocation: string;
@@ -31,6 +32,11 @@ export async function getClaimById(id: string): Promise<Claim> {
 }
 
 export async function submitClaim(data: CreateClaimDto): Promise<Claim> {
-  const response = await apiClient.post('/claims', data);
-  return response.data;
+  try {
+    const response = await apiClient.post('/claims', data);
+    return response.data;
+  } catch (error: any) {
+    const message = error.response?.data?.message || error.message || 'Submission failed';
+    throw new Error(Array.isArray(message) ? message.join(', ') : message);
+  }
 }

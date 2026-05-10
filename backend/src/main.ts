@@ -4,6 +4,7 @@ dotenv.config();
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { AppModule } from './app.module';
 
 const REQUIRED_ENV_VARS = [
@@ -32,6 +33,14 @@ async function bootstrap() {
   validateEnv();
 
   const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+  });
+
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({

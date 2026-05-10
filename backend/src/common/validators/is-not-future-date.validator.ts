@@ -10,9 +10,14 @@ export function IsNotFutureDate(validationOptions?: ValidationOptions) {
       validator: {
         validate(value: any) {
           if (!value) return true; // Let @IsNotEmpty handle empty
-          const date = new Date(value);
-          if (isNaN(date.getTime())) return false;
-          return date <= new Date();
+          const inputDate = new Date(value);
+          if (isNaN(inputDate.getTime())) return false;
+
+          // Normalize to end-of-day for date-only comparison (avoids timezone bugs)
+          const today = new Date();
+          today.setHours(23, 59, 59, 999);
+
+          return inputDate.getTime() <= today.getTime();
         },
         defaultMessage() {
           return 'incidentDate must not be in the future';

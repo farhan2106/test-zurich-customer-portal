@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { jwtDecode } from 'jwt-decode';
 
 interface User {
   id: string;
@@ -15,19 +16,48 @@ interface AuthState {
   error: string | null;
 }
 
-const getInitialToken = (): string | null => {
+interface JwtPayload {
+  sub: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  photoUrl: string;
+  role: string;
+}
+
+const getInitialState = (): AuthState => {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = jwtDecode<JwtPayload>(token);
+        return {
+          user: {
+            id: payload.sub,
+            email: payload.email,
+            firstName: payload.firstName,
+            lastName: payload.lastName,
+            role: payload.role,
+          },
+          token,
+          isLoading: false,
+          error: null,
+        };
+      } catch {
+        // Invalid token — clear it
+        localStorage.removeItem('token');
+      }
+    }
   }
-  return null;
+  return {
+    user: null,
+    token: null,
+    isLoading: false,
+    error: null,
+  };
 };
 
-const initialState: AuthState = {
-  user: null,
-  token: getInitialToken(),
-  isLoading: false,
-  error: null,
-};
+const initialState: AuthState = getInitialState();
 
 const authSlice = createSlice({
   name: 'auth',
@@ -67,4 +97,5 @@ const authSlice = createSlice({
 });
 
 export const { loginStart, loginSuccess, loginFailure, logout, clearError } = authSlice.actions;
+export { getInitialState };
 export default authSlice.reducer;

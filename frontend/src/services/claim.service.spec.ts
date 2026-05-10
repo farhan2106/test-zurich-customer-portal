@@ -21,6 +21,7 @@ describe('claim.service', () => {
           id: 'clm_1',
           claimNumber: 'CLM-2024-001',
           type: 'auto',
+          policyId: 'pol_1',
           policyNumber: 'POL-001',
           status: 'submitted',
           incidentDate: '2024-06-15',
@@ -30,6 +31,7 @@ describe('claim.service', () => {
           id: 'clm_2',
           claimNumber: 'CLM-2024-002',
           type: 'property',
+          policyId: 'pol_2',
           policyNumber: 'POL-002',
           status: 'under_review',
           incidentDate: '2024-07-20',
@@ -58,6 +60,7 @@ describe('claim.service', () => {
         id: 'clm_1',
         claimNumber: 'CLM-2024-001',
         type: 'auto',
+        policyId: 'pol_1',
         policyNumber: 'POL-001',
         status: 'submitted',
         incidentDate: '2024-06-15',
@@ -83,7 +86,7 @@ describe('claim.service', () => {
     it('calls apiClient.post("/claims", data) and returns data', async () => {
       const createClaimDto = {
         type: 'auto',
-        policyNumber: 'POL-001',
+        policyId: 'pol_1',
         incidentDate: '2024-06-15',
         description: 'Car accident',
         incidentLocation: 'Kuala Lumpur',
@@ -106,7 +109,7 @@ describe('claim.service', () => {
       const error = new Error('Submission failed');
       const createClaimDto = {
         type: 'auto',
-        policyNumber: 'POL-001',
+        policyId: 'pol_1',
         incidentDate: '2024-06-15',
         description: 'Car accident',
         incidentLocation: 'Kuala Lumpur',

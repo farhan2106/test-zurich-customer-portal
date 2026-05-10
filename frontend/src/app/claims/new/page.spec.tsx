@@ -89,6 +89,7 @@ const mockNewClaim = {
   id: 'clm_new_1',
   claimNumber: 'CLM-2024-003',
   type: 'Accident',
+  policyId: 'pol_1',
   policyNumber: 'POL-2024-001',
   status: 'submitted',
   incidentDate: '2024-06-15',
@@ -226,7 +227,7 @@ describe('Submit Claim Page', () => {
     });
 
     const policySelect = screen.getByRole('combobox', { name: /policy/i });
-    expect(policySelect).toHaveValue('POL-2024-002');
+    expect(policySelect).toHaveValue('pol_2');
   });
 
   it('shows validation errors inline when submitting empty form (requires fields)', async () => {
@@ -314,7 +315,7 @@ describe('Submit Claim Page', () => {
 
     // Fill in form
     const policySelect = screen.getByRole('combobox', { name: /policy/i });
-    fireEvent.change(policySelect, { target: { value: 'POL-2024-001' } });
+    fireEvent.change(policySelect, { target: { value: 'pol_1' } });
 
     const claimTypeSelect = screen.getByRole('combobox', { name: /claim type/i });
     fireEvent.change(claimTypeSelect, { target: { value: 'accident' } });
@@ -344,7 +345,7 @@ describe('Submit Claim Page', () => {
 
     // Fill in form
     const policySelect = screen.getByRole('combobox', { name: /policy/i });
-    fireEvent.change(policySelect, { target: { value: 'POL-2024-001' } });
+    fireEvent.change(policySelect, { target: { value: 'pol_1' } });
 
     const claimTypeSelect = screen.getByRole('combobox', { name: /claim type/i });
     fireEvent.change(claimTypeSelect, { target: { value: 'accident' } });

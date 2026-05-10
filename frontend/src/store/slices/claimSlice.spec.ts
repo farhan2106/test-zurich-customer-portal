@@ -23,6 +23,7 @@ const mockClaim = {
   id: 'clm_abc123',
   claimNumber: 'CLM-2024-001',
   type: 'auto',
+  policyId: 'pol_abc123',
   policyNumber: 'POL-2024-001',
   status: 'submitted',
   incidentDate: '2024-06-15',
@@ -35,6 +36,7 @@ const mockClaim2 = {
   id: 'clm_def456',
   claimNumber: 'CLM-2024-002',
   type: 'property',
+  policyId: 'pol_def456',
   policyNumber: 'POL-2024-002',
   status: 'under_review',
   incidentDate: '2024-07-20',
@@ -157,7 +159,7 @@ describe('claimSlice', () => {
       store.dispatch(
         submitClaim.fulfilled(newClaim, 'req-3', {
           type: 'auto',
-          policyNumber: 'POL-001',
+          policyId: 'pol_1',
           incidentDate: '2024-08-01',
           description: 'New claim',
           incidentLocation: 'Johor',
@@ -177,7 +179,7 @@ describe('claimSlice', () => {
           'request-id',
           {
             type: 'auto',
-            policyNumber: 'POL-001',
+            policyId: 'pol_1',
             incidentDate: '2024-08-01',
             description: 'New claim',
             incidentLocation: 'Johor',

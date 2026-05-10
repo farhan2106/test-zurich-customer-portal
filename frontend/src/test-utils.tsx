@@ -5,6 +5,7 @@ import { configureStore, ReducersMapObject } from '@reduxjs/toolkit';
 import authReducer from '@/store/slices/authSlice';
 import policyReducer from '@/store/slices/policySlice';
 import claimReducer from '@/store/slices/claimSlice';
+import adminReducer from '@/store/slices/adminSlice';
 import type { RootState } from '@/store';
 
 interface ExtendedOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -28,6 +29,8 @@ export function renderWithProviders(
         policy: policyReducer as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         claim: claimReducer as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        admin: adminReducer as any,
         ...additionalReducers,
       },
       preloadedState,

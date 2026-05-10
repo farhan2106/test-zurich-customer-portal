@@ -18,7 +18,7 @@ import { Button, Spinner } from '@/components/ui';
 const CLAIM_TYPES = ['accident', 'theft', 'damage', 'other'];
 
 interface FormErrors {
-  policyNumber?: string;
+  policyId?: string;
   type?: string;
   description?: string;
   incidentDate?: string;
@@ -41,7 +41,7 @@ function SubmitClaimFormContent() {
 
   const policyIdParam = searchParams.get('policyId');
 
-  const [policyNumber, setPolicyNumber] = useState('');
+  const [policyId, setPolicyId] = useState('');
   const [claimType, setClaimType] = useState('');
   const [description, setDescription] = useState('');
   const [incidentDate, setIncidentDate] = useState('');
@@ -59,7 +59,7 @@ function SubmitClaimFormContent() {
     if (policyIdParam && policies.length > 0) {
       const matched = policies.find((p) => p.id === policyIdParam);
       if (matched) {
-        setPolicyNumber(matched.policyNumber);
+        setPolicyId(matched.id);
       }
     }
   }, [policyIdParam, policies]);
@@ -69,8 +69,8 @@ function SubmitClaimFormContent() {
   const validate = (): FormErrors => {
     const newErrors: FormErrors = {};
 
-    if (!policyNumber) {
-      newErrors.policyNumber = 'Please select a policy';
+    if (!policyId) {
+      newErrors.policyId = 'Please select a policy';
     }
     if (!claimType) {
       newErrors.type = 'Please select a claim type';
@@ -93,7 +93,7 @@ function SubmitClaimFormContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({
-      policyNumber: true,
+      policyId: true,
       type: true,
       description: true,
       incidentDate: true,
@@ -109,7 +109,7 @@ function SubmitClaimFormContent() {
     const result = await dispatch(
       submitClaim({
         type: claimType,
-        policyNumber,
+        policyId,
         incidentDate,
         description,
         incidentLocation: incidentLocation || '',
@@ -154,15 +154,15 @@ function SubmitClaimFormContent() {
             <select
               id="policy"
               className={`select select-bordered w-full ${
-                touched.policyNumber && errors.policyNumber ? 'select-error' : ''
+                touched.policyId && errors.policyId ? 'select-error' : ''
               }`}
-              value={policyNumber}
-              onChange={(e) => setPolicyNumber(e.target.value)}
-              onBlur={() => handleBlur('policyNumber')}
+              value={policyId}
+              onChange={(e) => setPolicyId(e.target.value)}
+              onBlur={() => handleBlur('policyId')}
               disabled={isLoading}
-              aria-invalid={!!(touched.policyNumber && errors.policyNumber)}
+              aria-invalid={!!(touched.policyId && errors.policyId)}
               aria-describedby={
-                touched.policyNumber && errors.policyNumber
+                touched.policyId && errors.policyId
                   ? 'policy-error'
                   : undefined
               }
@@ -171,16 +171,16 @@ function SubmitClaimFormContent() {
                 Select a policy
               </option>
               {activePolicies.map((policy) => (
-                <option key={policy.id} value={policy.policyNumber}>
+                <option key={policy.id} value={policy.id}>
                   {policy.policyNumber}
                   {policy.product ? ` — ${policy.product.name}` : ''}
                 </option>
               ))}
             </select>
-            {touched.policyNumber && errors.policyNumber && (
+            {touched.policyId && errors.policyId && (
               <label id="policy-error" className="label">
                 <span className="label-text-alt text-error">
-                  {errors.policyNumber}
+                  {errors.policyId}
                 </span>
               </label>
             )}

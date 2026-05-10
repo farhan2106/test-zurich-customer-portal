@@ -131,7 +131,7 @@ function ClaimDetailContent() {
                 <span className="text-sm text-base-content/60">Policy</span>
                 <p>
                   <Link
-                    href={`/policies/${claim!.policyNumber}`}
+                    href={`/policies/${claim!.policyId}`}
                     className="link link-primary"
                   >
                     {claim!.policyNumber}
