@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { CustomerService } from './customer.service';
 import { Product } from '../entities/product.entity';
@@ -464,6 +464,352 @@ describe('CustomerService', () => {
 
       const createdPolicy = (policyRepo.create as jest.Mock).mock.calls[0][0];
       expect(createdPolicy.premiumAmount).toBe(1200.5);
+    });
+  });
+
+  describe('findPoliciesByCustomerId()', () => {
+    let policyRepository: jest.Mocked<Repository<Policy>>;
+
+    beforeEach(async () => {
+      const mockRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const mockPolicyRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockCustomerRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CustomerService,
+          {
+            provide: getRepositoryToken(Product),
+            useValue: mockRepo,
+          },
+          {
+            provide: getRepositoryToken(Policy),
+            useValue: mockPolicyRepo,
+          },
+          {
+            provide: getRepositoryToken(Customer),
+            useValue: mockCustomerRepo,
+          },
+        ],
+      }).compile();
+
+      service = module.get<CustomerService>(CustomerService);
+      policyRepository = module.get(getRepositoryToken(Policy));
+    });
+
+    it('should return policies for given customerId with product relation', async () => {
+      const mockPolicies: Policy[] = [{
+        id: 'pol_001', policyNumber: 'POL-20260101-0001',
+        customerId: 'usr_abc123', productId: 'prod_abc123',
+        status: PolicyStatus.ACTIVE,
+        startDate: new Date(), endDate: new Date(),
+        premiumAmount: 500, location: CustomerLocation.WEST_MALAYSIA,
+        createdAt: new Date(), updatedAt: new Date(),
+        customer: {} as Customer, product: mockProduct, claims: [],
+      }];
+
+      (policyRepository.find as jest.Mock).mockResolvedValue(mockPolicies);
+
+      const result = await service.findPoliciesByCustomerId('usr_abc123');
+
+      expect(policyRepository.find).toHaveBeenCalledWith({
+        where: { customerId: 'usr_abc123' },
+        relations: ['product'],
+      });
+      expect(result).toEqual(mockPolicies);
+    });
+
+    it('should return empty array when customer has no policies', async () => {
+      (policyRepository.find as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.findPoliciesByCustomerId('usr_abc123');
+
+      expect(result).toEqual([]);
+    });
+
+    it('should call find with correct where + relations', async () => {
+      (policyRepository.find as jest.Mock).mockResolvedValue([]);
+
+      await service.findPoliciesByCustomerId('usr_xyz789');
+
+      expect(policyRepository.find).toHaveBeenCalledWith({
+        where: { customerId: 'usr_xyz789' },
+        relations: ['product'],
+      });
+    });
+  });
+
+  describe('findPolicyById()', () => {
+    let policyRepository: jest.Mocked<Repository<Policy>>;
+
+    const mockPolicy: Policy = {
+      id: 'pol_001',
+      policyNumber: 'POL-20260101-0001',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2027-01-01'),
+      premiumAmount: 500,
+      location: CustomerLocation.WEST_MALAYSIA,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      customer: {} as Customer,
+      product: mockProduct,
+      claims: [],
+    };
+
+    beforeEach(async () => {
+      const mockRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const mockPolicyRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockCustomerRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CustomerService,
+          {
+            provide: getRepositoryToken(Product),
+            useValue: mockRepo,
+          },
+          {
+            provide: getRepositoryToken(Policy),
+            useValue: mockPolicyRepo,
+          },
+          {
+            provide: getRepositoryToken(Customer),
+            useValue: mockCustomerRepo,
+          },
+        ],
+      }).compile();
+
+      service = module.get<CustomerService>(CustomerService);
+      policyRepository = module.get(getRepositoryToken(Policy));
+    });
+
+    it('should return policy with product and claims relations', async () => {
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(mockPolicy);
+
+      const result = await service.findPolicyById('pol_001', 'usr_abc123');
+
+      expect(policyRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'pol_001' },
+        relations: ['product', 'claims'],
+      });
+      expect(result).toEqual(mockPolicy);
+    });
+
+    it('should throw NotFoundException when policy not found', async () => {
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.findPolicyById('nonexistent', 'usr_abc123')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw ForbiddenException when policy belongs to different customer', async () => {
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(mockPolicy);
+
+      await expect(service.findPolicyById('pol_001', 'usr_different')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should call findOne with correct where clause and relations', async () => {
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(mockPolicy);
+
+      await service.findPolicyById('pol_001', 'usr_abc123');
+
+      expect(policyRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'pol_001' },
+        relations: ['product', 'claims'],
+      });
+    });
+  });
+
+  describe('renewPolicy()', () => {
+    let policyRepository: jest.Mocked<Repository<Policy>>;
+
+    const createMockPolicy = (overrides: Partial<Policy> = {}): Policy => ({
+      id: 'pol_001',
+      policyNumber: 'POL-20260101-0001',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2025-01-01'),
+      endDate: new Date('2026-01-01'),
+      premiumAmount: 500,
+      location: CustomerLocation.WEST_MALAYSIA,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      customer: {} as Customer,
+      product: mockProduct,
+      claims: [],
+      ...overrides,
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    beforeEach(async () => {
+      const mockRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const mockPolicyRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockCustomerRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CustomerService,
+          {
+            provide: getRepositoryToken(Product),
+            useValue: mockRepo,
+          },
+          {
+            provide: getRepositoryToken(Policy),
+            useValue: mockPolicyRepo,
+          },
+          {
+            provide: getRepositoryToken(Customer),
+            useValue: mockCustomerRepo,
+          },
+        ],
+      }).compile();
+
+      service = module.get<CustomerService>(CustomerService);
+      policyRepository = module.get(getRepositoryToken(Policy));
+    });
+
+    it('should extend endDate by 365 days from current endDate', async () => {
+      const now = new Date('2025-12-15T00:00:00Z');
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
+      const policyWithinWindow = createMockPolicy();
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(policyWithinWindow);
+      (policyRepository.save as jest.Mock).mockImplementation((p) => p);
+
+      const result = await service.renewPolicy('pol_001', 'usr_abc123');
+
+      const expectedEndDate = new Date('2026-01-01');
+      expectedEndDate.setDate(expectedEndDate.getDate() + 365);
+      expect(result.endDate.getTime()).toBeCloseTo(expectedEndDate.getTime(), -3);
+    });
+
+    it('should throw NotFoundException when policy not found', async () => {
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.renewPolicy('nonexistent', 'usr_abc123')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw ForbiddenException when policy belongs to different customer', async () => {
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(createMockPolicy());
+
+      await expect(service.renewPolicy('pol_001', 'usr_different')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should throw BadRequestException when policy status is not active', async () => {
+      const expiredPolicy = createMockPolicy({ status: PolicyStatus.EXPIRED });
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(expiredPolicy);
+
+      await expect(service.renewPolicy('pol_001', 'usr_abc123')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException when not within 30-day renewal window', async () => {
+      const now = new Date('2025-06-01T00:00:00Z');
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
+      // endDate 100 days from now — well outside the 30-day window
+      const farEndDate = new Date(now);
+      farEndDate.setDate(farEndDate.getDate() + 100);
+      const policyFarFromExpiry = createMockPolicy({ endDate: farEndDate });
+
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(policyFarFromExpiry);
+
+      await expect(service.renewPolicy('pol_001', 'usr_abc123')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should allow renewal within 30-day window', async () => {
+      const now = new Date('2025-12-15T00:00:00Z');
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
+      // endDate 15 days from now — within the 30-day window
+      const withinWindow = new Date(now);
+      withinWindow.setDate(withinWindow.getDate() + 15);
+      const policyWithinWindow = createMockPolicy({ endDate: withinWindow });
+
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(policyWithinWindow);
+      (policyRepository.save as jest.Mock).mockImplementation((p) => p);
+
+      const result = await service.renewPolicy('pol_001', 'usr_abc123');
+
+      expect(result).toBeDefined();
+      expect(result.endDate).toBeDefined();
+    });
+
+    it('should return updated policy with save() called', async () => {
+      const now = new Date('2025-12-15T00:00:00Z');
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
+
+      const withinWindow = new Date(now);
+      withinWindow.setDate(withinWindow.getDate() + 15);
+      const policyWithinWindow = createMockPolicy({ endDate: withinWindow });
+
+      (policyRepository.findOne as jest.Mock).mockResolvedValue(policyWithinWindow);
+      (policyRepository.save as jest.Mock).mockImplementation((p) => p);
+
+      const result = await service.renewPolicy('pol_001', 'usr_abc123');
+
+      expect(policyRepository.save).toHaveBeenCalled();
+      expect(result).toEqual(policyWithinWindow);
     });
   });
 });

@@ -51,4 +51,38 @@ export class PolicyController {
     const policy = await this.customerService.purchasePolicy(user.sub, dto.productId);
     return PolicyResponseDto.fromEntity(policy);
   }
+
+  @Get()
+  @ApiOperation({ summary: 'List my insurance policies' })
+  @ApiResponse({ status: 200, description: 'Policies returned', type: [PolicyResponseDto] })
+  async list(@Req() req: Request): Promise<PolicyResponseDto[]> {
+    const user = req.user as JwtUser;
+    const policies = await this.customerService.findPoliciesByCustomerId(user.sub);
+    return policies.map(PolicyResponseDto.fromEntity);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get policy by ID' })
+  @ApiParam({ name: 'id', description: 'Policy UUID', example: 'pol_abc123' })
+  @ApiResponse({ status: 200, description: 'Policy found', type: PolicyResponseDto })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  @ApiResponse({ status: 404, description: 'Policy not found' })
+  async detail(@Req() req: Request, @Param('id') id: string): Promise<PolicyResponseDto> {
+    const user = req.user as JwtUser;
+    const policy = await this.customerService.findPolicyById(id, user.sub);
+    return PolicyResponseDto.fromEntity(policy);
+  }
+
+  @Post(':id/renew')
+  @ApiOperation({ summary: 'Renew an existing policy' })
+  @ApiParam({ name: 'id', description: 'Policy UUID', example: 'pol_abc123' })
+  @ApiResponse({ status: 200, description: 'Policy renewed', type: PolicyResponseDto })
+  @ApiResponse({ status: 400, description: 'Policy not renewable' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  @ApiResponse({ status: 404, description: 'Policy not found' })
+  async renew(@Req() req: Request, @Param('id') id: string): Promise<PolicyResponseDto> {
+    const user = req.user as JwtUser;
+    const policy = await this.customerService.renewPolicy(id, user.sub);
+    return PolicyResponseDto.fromEntity(policy);
+  }
 }

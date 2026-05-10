@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { CustomerController, PolicyController } from './customer.controller';
 import { CustomerService } from './customer.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -11,6 +11,9 @@ import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
 import { Customer } from '../entities/customer.entity';
 import { ProductStatus, PolicyStatus, CustomerLocation } from '../entities/enums';
+
+import type { Request } from 'express';
+import { JwtUser } from '../auth/jwt.strategy';
 
 describe('CustomerController', () => {
   let controller: CustomerController;
@@ -47,6 +50,9 @@ describe('CustomerController', () => {
       findAllActiveProducts: jest.fn(),
       findProductById: jest.fn(),
       purchasePolicy: jest.fn(),
+      findPoliciesByCustomerId: jest.fn(),
+      findPolicyById: jest.fn(),
+      renewPolicy: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -357,6 +363,320 @@ describe('CustomerController', () => {
         // is verified by the functional tests above
         expect(methodLength).toBeGreaterThanOrEqual(2);
       }
+    });
+  });
+
+  describe('GET /api/policies', () => {
+    const mockPolicies: Policy[] = [{
+      id: 'pol_abc123',
+      policyNumber: 'POL-20260101-1234',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2027-01-01'),
+      premiumAmount: 500.0,
+      location: CustomerLocation.WEST_MALAYSIA,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      customer: {} as Customer,
+      product: mockProduct,
+      claims: [],
+    }];
+
+    const mockPolicyResponse: PolicyResponseDto = {
+      id: 'pol_abc123',
+      policyNumber: 'POL-20260101-1234',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2027-01-01'),
+      premiumAmount: 500.0,
+      location: CustomerLocation.WEST_MALAYSIA,
+      product: {
+        id: 'prod_abc123',
+        productCode: 4000,
+        name: 'Auto Insurance',
+        description: 'Comprehensive auto coverage',
+        coverageDetails: {
+          liability: 'Up to $1M',
+          collision: 'Included',
+        },
+        basePremium: 500.0,
+        status: ProductStatus.ACTIVE,
+      },
+      claims: [],
+    };
+
+    it('should return PolicyResponseDto[] for authenticated user policies', async () => {
+      customerService.findPoliciesByCustomerId.mockResolvedValue(mockPolicies);
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const result = await policyController.list(mockReq);
+
+      expect(customerService.findPoliciesByCustomerId).toHaveBeenCalledWith('usr_abc123');
+      expect(result).toBeInstanceOf(Array);
+      expect(result.length).toBe(1);
+      expect(result[0]).toBeInstanceOf(PolicyResponseDto);
+      expect(result[0]).toEqual(mockPolicyResponse);
+    });
+
+    it('should return empty array when user has no policies', async () => {
+      customerService.findPoliciesByCustomerId.mockResolvedValue([]);
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const result = await policyController.list(mockReq);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should have JwtAuthGuard applied (class-level check)', () => {
+      const classGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        PolicyController,
+      );
+      const methodGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        PolicyController.prototype.list,
+      );
+
+      const allGuards = [...(classGuards || []), ...(methodGuards || [])];
+
+      expect(allGuards.length).toBeGreaterThan(0);
+      const hasJwtGuard = allGuards.some(
+        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+      );
+      expect(hasJwtGuard).toBe(true);
+    });
+
+    it('should have @ApiOperation decorator', () => {
+      const metadata = Reflect.getMetadata(
+        'swagger/apiOperation',
+        PolicyController.prototype.list,
+      );
+      expect(metadata).toBeDefined();
+    });
+  });
+
+  describe('GET /api/policies/:id', () => {
+    const mockPolicy: Policy = {
+      id: 'pol_abc123',
+      policyNumber: 'POL-20260101-1234',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2027-01-01'),
+      premiumAmount: 500.0,
+      location: CustomerLocation.WEST_MALAYSIA,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      customer: {} as Customer,
+      product: mockProduct,
+      claims: [],
+    };
+
+    const mockPolicyResponse: PolicyResponseDto = {
+      id: 'pol_abc123',
+      policyNumber: 'POL-20260101-1234',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2027-01-01'),
+      premiumAmount: 500.0,
+      location: CustomerLocation.WEST_MALAYSIA,
+      product: {
+        id: 'prod_abc123',
+        productCode: 4000,
+        name: 'Auto Insurance',
+        description: 'Comprehensive auto coverage',
+        coverageDetails: {
+          liability: 'Up to $1M',
+          collision: 'Included',
+        },
+        basePremium: 500.0,
+        status: ProductStatus.ACTIVE,
+      },
+      claims: [],
+    };
+
+    it('should return PolicyResponseDto with product and claims for the found policy', async () => {
+      customerService.findPolicyById.mockResolvedValue(mockPolicy);
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const result = await policyController.detail(mockReq, 'pol_abc123');
+
+      expect(customerService.findPolicyById).toHaveBeenCalledWith('pol_abc123', 'usr_abc123');
+      expect(result).toBeInstanceOf(PolicyResponseDto);
+      expect(result).toEqual(mockPolicyResponse);
+    });
+
+    it('should throw NotFoundException (404) when policy not found', async () => {
+      customerService.findPolicyById.mockRejectedValue(
+        new NotFoundException('Policy not found'),
+      );
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      await expect(policyController.detail(mockReq, 'nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw ForbiddenException (403) when policy belongs to another customer', async () => {
+      customerService.findPolicyById.mockRejectedValue(
+        new ForbiddenException('Access denied'),
+      );
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      await expect(policyController.detail(mockReq, 'pol_other')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should have @ApiParam decorator for id', () => {
+      const metadata = Reflect.getMetadata(
+        'swagger/apiParameters',
+        PolicyController.prototype.detail,
+      );
+      expect(metadata).toBeDefined();
+      expect(Array.isArray(metadata)).toBe(true);
+
+      const hasIdParam = metadata!.some(
+        (param: any) => param.name === 'id' || param.in === 'path',
+      );
+      expect(hasIdParam).toBe(true);
+    });
+
+    it('should have JwtAuthGuard applied', () => {
+      const classGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        PolicyController,
+      );
+      const methodGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        PolicyController.prototype.detail,
+      );
+
+      const allGuards = [...(classGuards || []), ...(methodGuards || [])];
+
+      expect(allGuards.length).toBeGreaterThan(0);
+      const hasJwtGuard = allGuards.some(
+        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+      );
+      expect(hasJwtGuard).toBe(true);
+    });
+  });
+
+  describe('POST /api/policies/:id/renew', () => {
+    const mockRenewedPolicy: Policy = {
+      id: 'pol_abc123',
+      policyNumber: 'POL-20260101-1234',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2025-01-01'),
+      endDate: new Date('2028-01-01'),
+      premiumAmount: 500.0,
+      location: CustomerLocation.WEST_MALAYSIA,
+      createdAt: new Date('2026-01-01'),
+      updatedAt: new Date('2026-01-01'),
+      customer: {} as Customer,
+      product: mockProduct,
+      claims: [],
+    };
+
+    const mockRenewedResponse: PolicyResponseDto = {
+      id: 'pol_abc123',
+      policyNumber: 'POL-20260101-1234',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2025-01-01'),
+      endDate: new Date('2028-01-01'),
+      premiumAmount: 500.0,
+      location: CustomerLocation.WEST_MALAYSIA,
+      product: {
+        id: 'prod_abc123',
+        productCode: 4000,
+        name: 'Auto Insurance',
+        description: 'Comprehensive auto coverage',
+        coverageDetails: {
+          liability: 'Up to $1M',
+          collision: 'Included',
+        },
+        basePremium: 500.0,
+        status: ProductStatus.ACTIVE,
+      },
+      claims: [],
+    };
+
+    it('should return updated PolicyResponseDto with extended endDate (365 days added)', async () => {
+      customerService.renewPolicy.mockResolvedValue(mockRenewedPolicy);
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const result = await policyController.renew(mockReq, 'pol_abc123');
+
+      expect(customerService.renewPolicy).toHaveBeenCalledWith('pol_abc123', 'usr_abc123');
+      expect(result).toBeInstanceOf(PolicyResponseDto);
+      expect(result).toEqual(mockRenewedResponse);
+    });
+
+    it('should throw NotFoundException (404) when policy not found', async () => {
+      customerService.renewPolicy.mockRejectedValue(
+        new NotFoundException('Policy not found'),
+      );
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      await expect(policyController.renew(mockReq, 'nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw BadRequestException (400) when policy not renewable', async () => {
+      customerService.renewPolicy.mockRejectedValue(
+        new BadRequestException('Policy is not renewable'),
+      );
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      await expect(policyController.renew(mockReq, 'pol_abc123')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should have JwtAuthGuard applied', () => {
+      const classGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        PolicyController,
+      );
+      const methodGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        PolicyController.prototype.renew,
+      );
+
+      const allGuards = [...(classGuards || []), ...(methodGuards || [])];
+
+      expect(allGuards.length).toBeGreaterThan(0);
+      const hasJwtGuard = allGuards.some(
+        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+      );
+      expect(hasJwtGuard).toBe(true);
+    });
+
+    it('should have @ApiOperation + @ApiParam decorators', () => {
+      const operationMetadata = Reflect.getMetadata(
+        'swagger/apiOperation',
+        PolicyController.prototype.renew,
+      );
+      expect(operationMetadata).toBeDefined();
+
+      const paramMetadata = Reflect.getMetadata(
+        'swagger/apiParameters',
+        PolicyController.prototype.renew,
+      );
+      expect(paramMetadata).toBeDefined();
+      expect(Array.isArray(paramMetadata)).toBe(true);
     });
   });
 });

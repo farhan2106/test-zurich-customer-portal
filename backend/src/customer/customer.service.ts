@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../entities/product.entity';
@@ -77,6 +77,60 @@ export class CustomerService {
       premiumAmount: Number(product.basePremium),
       location: customer.location,
     });
+
+    return this.policyRepository.save(policy);
+  }
+
+  async findPoliciesByCustomerId(customerId: string): Promise<Policy[]> {
+    return this.policyRepository.find({
+      where: { customerId },
+      relations: ['product'],
+    });
+  }
+
+  async findPolicyById(id: string, customerId: string): Promise<Policy> {
+    const policy = await this.policyRepository.findOne({
+      where: { id },
+      relations: ['product', 'claims'],
+    });
+
+    if (!policy) {
+      throw new NotFoundException('Policy not found');
+    }
+
+    if (policy.customerId !== customerId) {
+      throw new ForbiddenException('You do not have access to this policy');
+    }
+
+    return policy;
+  }
+
+  async renewPolicy(policyId: string, customerId: string): Promise<Policy> {
+    const policy = await this.policyRepository.findOne({
+      where: { id: policyId },
+    });
+
+    if (!policy) {
+      throw new NotFoundException('Policy not found');
+    }
+
+    if (policy.customerId !== customerId) {
+      throw new ForbiddenException('You do not have access to this policy');
+    }
+
+    if (policy.status !== PolicyStatus.ACTIVE) {
+      throw new BadRequestException('Only active policies can be renewed');
+    }
+
+    const now = new Date();
+    const endDate = new Date(policy.endDate);
+    const daysUntilExpiry = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilExpiry > 30) {
+      throw new BadRequestException('Policy can only be renewed within 30 days of expiry');
+    }
+
+    policy.endDate = new Date(endDate.getTime() + 365 * 24 * 60 * 60 * 1000);
 
     return this.policyRepository.save(policy);
   }
