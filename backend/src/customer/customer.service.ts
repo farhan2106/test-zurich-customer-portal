@@ -7,6 +7,7 @@ import { Customer } from '../entities/customer.entity';
 import { Claim } from '../entities/claim.entity';
 import { ProductStatus, PolicyStatus, CustomerLocation, ClaimType, ClaimStatus } from '../entities/enums';
 import { CreateClaimDto } from './dto/create-claim.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 
 @Injectable()
 export class CustomerService {
@@ -204,6 +205,39 @@ export class CustomerService {
     return this.customerRepository.find({
       where,
     });
+  }
+
+  async findCustomerById(id: string): Promise<Customer> {
+    const customer = await this.customerRepository.findOne({
+      where: { id },
+      relations: ['policies', 'policies.product', 'claims'],
+    });
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    return customer;
+  }
+
+  async updateCustomer(id: string, dto: UpdateCustomerDto): Promise<Customer> {
+    const customer = await this.customerRepository.findOne({
+      where: { id },
+    });
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    // Partial update: only apply provided fields
+    if (dto.firstName !== undefined) customer.firstName = dto.firstName;
+    if (dto.lastName !== undefined) customer.lastName = dto.lastName;
+    if (dto.photoUrl !== undefined) customer.photoUrl = dto.photoUrl;
+    if (dto.location !== undefined) customer.location = dto.location;
+    if (dto.premiumPaid !== undefined) customer.premiumPaid = dto.premiumPaid;
+    // Email is intentionally NOT updated (immutable)
+
+    return this.customerRepository.save(customer);
   }
 
   async findClaimById(id: string, customerId: string): Promise<Claim> {

@@ -1444,6 +1444,263 @@ describe('CustomerService', () => {
     });
   });
 
+  describe('findCustomerById()', () => {
+    let customerRepo: jest.Mocked<Repository<Customer>>;
+
+    const mockCustomer: Customer = {
+      id: 'usr_001',
+      email: 'john@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      photoUrl: null,
+      location: CustomerLocation.WEST_MALAYSIA,
+      premiumPaid: 1500.50,
+      role: CustomerRole.CUSTOMER,
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-06-15'),
+      policies: [],
+      claims: [],
+    };
+
+    beforeEach(async () => {
+      const mockProductRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const mockPolicyRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockCustomerRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const mockClaimRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CustomerService,
+          {
+            provide: getRepositoryToken(Product),
+            useValue: mockProductRepo,
+          },
+          {
+            provide: getRepositoryToken(Policy),
+            useValue: mockPolicyRepo,
+          },
+          {
+            provide: getRepositoryToken(Customer),
+            useValue: mockCustomerRepo,
+          },
+          {
+            provide: getRepositoryToken(Claim),
+            useValue: mockClaimRepo,
+          },
+        ],
+      }).compile();
+
+      service = module.get<CustomerService>(CustomerService);
+      customerRepo = module.get(getRepositoryToken(Customer));
+    });
+
+    it('should return customer with policies, policies.product, and claims relations', async () => {
+      customerRepo.findOne.mockResolvedValue({ ...mockCustomer });
+
+      const result = await service.findCustomerById('usr_001');
+
+      expect(customerRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'usr_001' },
+        relations: ['policies', 'policies.product', 'claims'],
+      });
+      expect(result).toEqual(mockCustomer);
+    });
+
+    it('should throw NotFoundException when customer not found', async () => {
+      customerRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.findCustomerById('nonexistent_id')).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(customerRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'nonexistent_id' },
+        relations: ['policies', 'policies.product', 'claims'],
+      });
+    });
+  });
+
+  describe('updateCustomer()', () => {
+    let customerRepo: jest.Mocked<Repository<Customer>>;
+
+    const mockCustomer: Customer = {
+      id: 'usr_001',
+      email: 'john@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      photoUrl: null,
+      location: CustomerLocation.WEST_MALAYSIA,
+      premiumPaid: 1500.50,
+      role: CustomerRole.CUSTOMER,
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-06-15'),
+      policies: [],
+      claims: [],
+    };
+
+    beforeEach(async () => {
+      const mockProductRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+      };
+
+      const mockPolicyRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockCustomerRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockClaimRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CustomerService,
+          {
+            provide: getRepositoryToken(Product),
+            useValue: mockProductRepo,
+          },
+          {
+            provide: getRepositoryToken(Policy),
+            useValue: mockPolicyRepo,
+          },
+          {
+            provide: getRepositoryToken(Customer),
+            useValue: mockCustomerRepo,
+          },
+          {
+            provide: getRepositoryToken(Claim),
+            useValue: mockClaimRepo,
+          },
+        ],
+      }).compile();
+
+      service = module.get<CustomerService>(CustomerService);
+      customerRepo = module.get(getRepositoryToken(Customer));
+    });
+
+    it('should update firstName', async () => {
+      customerRepo.findOne.mockResolvedValue({ ...mockCustomer });
+      customerRepo.save.mockResolvedValue({ ...mockCustomer, firstName: 'Updated' });
+
+      const result = await service.updateCustomer('usr_001', { firstName: 'Updated' });
+
+      expect(customerRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'usr_001' },
+      });
+      expect(customerRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ firstName: 'Updated' }),
+      );
+      expect(result.firstName).toBe('Updated');
+    });
+
+    it('should update lastName', async () => {
+      customerRepo.findOne.mockResolvedValue({ ...mockCustomer });
+      customerRepo.save.mockResolvedValue({ ...mockCustomer, lastName: 'Updated' });
+
+      const result = await service.updateCustomer('usr_001', { lastName: 'Updated' });
+
+      expect(customerRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ lastName: 'Updated' }),
+      );
+      expect(result.lastName).toBe('Updated');
+    });
+
+    it('should update location', async () => {
+      customerRepo.findOne.mockResolvedValue({ ...mockCustomer });
+      customerRepo.save.mockResolvedValue({
+        ...mockCustomer,
+        location: CustomerLocation.EAST_MALAYSIA,
+      });
+
+      const result = await service.updateCustomer('usr_001', {
+        location: CustomerLocation.EAST_MALAYSIA,
+      });
+
+      expect(customerRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ location: CustomerLocation.EAST_MALAYSIA }),
+      );
+      expect(result.location).toBe(CustomerLocation.EAST_MALAYSIA);
+    });
+
+    it('should update premiumPaid', async () => {
+      customerRepo.findOne.mockResolvedValue({ ...mockCustomer });
+      customerRepo.save.mockResolvedValue({ ...mockCustomer, premiumPaid: 2500.0 });
+
+      const result = await service.updateCustomer('usr_001', { premiumPaid: 2500.0 });
+
+      expect(customerRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ premiumPaid: 2500.0 }),
+      );
+      expect(result.premiumPaid).toBe(2500.0);
+    });
+
+    it('should update only provided fields (partial update)', async () => {
+      customerRepo.findOne.mockResolvedValue({ ...mockCustomer });
+      customerRepo.save.mockResolvedValue({
+        ...mockCustomer,
+        firstName: 'Updated',
+        lastName: 'Doe',
+        location: CustomerLocation.WEST_MALAYSIA,
+      });
+
+      const result = await service.updateCustomer('usr_001', { firstName: 'Updated' });
+
+      expect(customerRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: 'Updated',
+          lastName: 'Doe',
+          location: CustomerLocation.WEST_MALAYSIA,
+        }),
+      );
+      expect(result.firstName).toBe('Updated');
+      expect(result.lastName).toBe('Doe');
+    });
+
+    it('should throw NotFoundException when customer not found', async () => {
+      customerRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateCustomer('nonexistent_id', { firstName: 'Updated' }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(customerRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'nonexistent_id' },
+      });
+      expect(customerRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
   describe('findClaimById()', () => {
     let serviceWithClaim: CustomerService;
     let claimRepo: jest.Mocked<Repository<Claim>>;

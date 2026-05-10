@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { CustomerService } from './customer.service';
 import { ProductResponseDto } from './dto/product-response.dto';
@@ -10,6 +10,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CustomerResponseDto } from './dto/customer-response.dto';
+import { AdminCustomerDetailDto } from './dto/admin-customer-detail.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { CustomerLocation } from '../entities/enums';
 import type { Request } from 'express';
 import { JwtUser } from '../auth/jwt.strategy';
@@ -151,5 +153,33 @@ export class AdminCustomerController {
   async listCustomers(@Query() filters: { search?: string; location?: string }): Promise<CustomerResponseDto[]> {
     const customers = await this.customerService.findAllCustomers(filters);
     return customers.map(c => CustomerResponseDto.fromEntity(c));
+  }
+
+  @Get(':id')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get customer details (admin)' })
+  @ApiParam({ name: 'id', description: 'Customer UUID', example: 'usr_abc123' })
+  @ApiResponse({ status: 200, description: 'Customer details', type: AdminCustomerDetailDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - requires admin role' })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  async getCustomerById(@Param('id') id: string): Promise<AdminCustomerDetailDto> {
+    const customer = await this.customerService.findCustomerById(id);
+    return AdminCustomerDetailDto.fromEntity(customer);
+  }
+
+  @Patch(':id')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update customer details (admin)' })
+  @ApiParam({ name: 'id', description: 'Customer UUID', example: 'usr_abc123' })
+  @ApiResponse({ status: 200, description: 'Customer updated', type: CustomerResponseDto })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  @ApiResponse({ status: 403, description: 'Forbidden - requires admin role' })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  async updateCustomer(
+    @Param('id') id: string,
+    @Body() dto: UpdateCustomerDto,
+  ): Promise<CustomerResponseDto> {
+    const customer = await this.customerService.updateCustomer(id, dto);
+    return CustomerResponseDto.fromEntity(customer);
   }
 }

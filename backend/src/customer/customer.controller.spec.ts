@@ -9,6 +9,8 @@ import { ProductResponseDto } from './dto/product-response.dto';
 import { PolicyResponseDto } from './dto/policy-response.dto';
 import { ClaimResponseDto } from './dto/claim-response.dto';
 import { CustomerResponseDto } from './dto/customer-response.dto';
+import { AdminCustomerDetailDto } from './dto/admin-customer-detail.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { CreatePolicyDto } from './dto/create-policy.dto';
 import { CreateClaimDto } from './dto/create-claim.dto';
 import { Product } from '../entities/product.entity';
@@ -1380,6 +1382,190 @@ describe('CustomerController', () => {
         AdminCustomerController.prototype.listCustomers,
       );
       expect(metadata).toBeDefined();
+    });
+  });
+
+  describe('GET /api/customers/:id (admin detail)', () => {
+    let adminController: AdminCustomerController;
+
+    const mockCustomer: Customer = {
+      id: 'usr_001',
+      email: 'john@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      photoUrl: null,
+      location: CustomerLocation.WEST_MALAYSIA,
+      premiumPaid: 1500.50,
+      role: CustomerRole.CUSTOMER,
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-06-15'),
+      policies: [],
+      claims: [],
+    };
+
+    const mockCustomerDetailResponse: AdminCustomerDetailDto =
+      AdminCustomerDetailDto.fromEntity(mockCustomer);
+
+    beforeEach(async () => {
+      const mockService = {
+        findAllActiveProducts: jest.fn(),
+        findProductById: jest.fn(),
+        purchasePolicy: jest.fn(),
+        findPoliciesByCustomerId: jest.fn(),
+        findPolicyById: jest.fn(),
+        renewPolicy: jest.fn(),
+        submitClaim: jest.fn(),
+        findClaimsByCustomerId: jest.fn(),
+        findClaimById: jest.fn(),
+        findAllCustomers: jest.fn(),
+        findCustomerById: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [CustomerController, PolicyController, ClaimsController, AdminCustomerController],
+        providers: [
+          {
+            provide: CustomerService,
+            useValue: mockService,
+          },
+        ],
+      })
+        .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: jest.fn(() => true) })
+        .overrideGuard(RolesGuard)
+        .useValue({ canActivate: jest.fn(() => true) })
+        .compile();
+
+      adminController = module.get<AdminCustomerController>(AdminCustomerController);
+      customerService = module.get(CustomerService);
+    });
+
+    it('should return AdminCustomerDetailDto for a valid customer', async () => {
+      customerService.findCustomerById.mockResolvedValue(mockCustomer);
+
+      const result = await adminController.getCustomerById('usr_001');
+
+      expect(customerService.findCustomerById).toHaveBeenCalledWith('usr_001');
+      expect(result).toBeInstanceOf(AdminCustomerDetailDto);
+      expect(result).toEqual(mockCustomerDetailResponse);
+    });
+
+    it('should return 404 when customer not found', async () => {
+      customerService.findCustomerById.mockRejectedValue(
+        new NotFoundException('Customer not found'),
+      );
+
+      await expect(adminController.getCustomerById('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(customerService.findCustomerById).toHaveBeenCalledWith('nonexistent');
+    });
+  });
+
+  describe('PATCH /api/customers/:id (admin update)', () => {
+    let adminController: AdminCustomerController;
+
+    const mockCustomer: Customer = {
+      id: 'usr_001',
+      email: 'john@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      photoUrl: null,
+      location: CustomerLocation.WEST_MALAYSIA,
+      premiumPaid: 1500.50,
+      role: CustomerRole.CUSTOMER,
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-06-15'),
+      policies: [],
+      claims: [],
+    };
+
+    const mockCustomerResponse: CustomerResponseDto =
+      CustomerResponseDto.fromEntity(mockCustomer);
+
+    beforeEach(async () => {
+      const mockService = {
+        findAllActiveProducts: jest.fn(),
+        findProductById: jest.fn(),
+        purchasePolicy: jest.fn(),
+        findPoliciesByCustomerId: jest.fn(),
+        findPolicyById: jest.fn(),
+        renewPolicy: jest.fn(),
+        submitClaim: jest.fn(),
+        findClaimsByCustomerId: jest.fn(),
+        findClaimById: jest.fn(),
+        findAllCustomers: jest.fn(),
+        findCustomerById: jest.fn(),
+        updateCustomer: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [CustomerController, PolicyController, ClaimsController, AdminCustomerController],
+        providers: [
+          {
+            provide: CustomerService,
+            useValue: mockService,
+          },
+        ],
+      })
+        .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: jest.fn(() => true) })
+        .overrideGuard(RolesGuard)
+        .useValue({ canActivate: jest.fn(() => true) })
+        .compile();
+
+      adminController = module.get<AdminCustomerController>(AdminCustomerController);
+      customerService = module.get(CustomerService);
+    });
+
+    it('should update customer and return CustomerResponseDto', async () => {
+      const updatedCustomer = { ...mockCustomer, firstName: 'Updated' };
+      customerService.updateCustomer.mockResolvedValue(updatedCustomer);
+
+      const updateDto: UpdateCustomerDto = { firstName: 'Updated' };
+      const result = await adminController.updateCustomer('usr_001', updateDto);
+
+      expect(customerService.updateCustomer).toHaveBeenCalledWith('usr_001', updateDto);
+      expect(result).toBeInstanceOf(CustomerResponseDto);
+      expect(result).toEqual(CustomerResponseDto.fromEntity(updatedCustomer));
+    });
+
+    it('should return 404 when customer not found', async () => {
+      customerService.updateCustomer.mockRejectedValue(
+        new NotFoundException('Customer not found'),
+      );
+
+      await expect(
+        adminController.updateCustomer('nonexistent', { firstName: 'Updated' }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(customerService.updateCustomer).toHaveBeenCalledWith('nonexistent', {
+        firstName: 'Updated',
+      });
+    });
+
+    it('should have @Roles("admin") decorator', () => {
+      const rolesMetadata = Reflect.getMetadata(
+        'roles',
+        AdminCustomerController.prototype.updateCustomer,
+      );
+      expect(rolesMetadata).toBeDefined();
+      expect(rolesMetadata).toContain('admin');
+    });
+
+    it('should have @ApiParam for id', () => {
+      const metadata = Reflect.getMetadata(
+        'swagger/apiParameters',
+        AdminCustomerController.prototype.updateCustomer,
+      );
+      expect(metadata).toBeDefined();
+      expect(Array.isArray(metadata)).toBe(true);
+
+      const hasIdParam = metadata!.some(
+        (param: any) => param.name === 'id' || param.in === 'path',
+      );
+      expect(hasIdParam).toBe(true);
     });
   });
 });
