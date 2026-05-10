@@ -32,6 +32,8 @@ describe('Login Page', () => {
     render(<LoginPage />);
 
     expect(screen.getByRole('heading', { name: /welcome to zurich/i })).toBeInTheDocument();
+    // The Zurich brand text should be visible
+    expect(screen.getByText('Zurich')).toBeInTheDocument();
   });
 
   it('renders "Your Insurance Portal" subtitle', () => {
@@ -83,6 +85,8 @@ describe('Login Page', () => {
     render(<LoginPage />);
 
     expect(screen.getByText(/authentication was cancelled/i)).toBeInTheDocument();
+    const alertEl = screen.getByText(/Authentication was cancelled/i);
+    expect(alertEl).toBeInTheDocument();
   });
 
   it('redirects to /dashboard when user already has JWT token', () => {
@@ -98,5 +102,11 @@ describe('Login Page', () => {
     render(<LoginPage />, { preloadedState: authenticatedState });
 
     expect(nextNavigation.redirect).toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('renders the login card on the page', () => {
+    render(<LoginPage />, { preloadedState: { auth: { user: null, token: null, isLoading: false, error: null } } });
+    // Card should be in the document
+    expect(screen.getByText('Welcome to Zurich')).toBeInTheDocument();
   });
 });

@@ -101,6 +101,11 @@ describe('Purchase Page', () => {
       expect(screen.getByText('Step 2')).toBeInTheDocument();
       expect(screen.getByText('Step 3')).toBeInTheDocument();
     });
+
+    // At Step 1, the first step should have step-primary
+    const steps = screen.getAllByRole('listitem');
+    // Just verify the steps exist
+    expect(steps.length).toBe(3);
   });
 
   it('Step 1 (Confirm): shows product info, customer details from Redux, estimated premium, and "Continue to Review" button', async () => {
@@ -151,6 +156,8 @@ describe('Purchase Page', () => {
     await waitFor(() => {
       expect(screen.getByText(/purchase successful/i)).toBeInTheDocument();
       expect(screen.getByText('POL-001')).toBeInTheDocument();
+      // Check the checkmark emoji or visual indicator
+      expect(screen.getByText(/✅/)).toBeInTheDocument();
       const dashboardLink = screen.getByRole('link', { name: /view my portfolio/i });
       expect(dashboardLink).toHaveAttribute('href', '/dashboard');
       const productsLink = screen.getByRole('link', { name: /browse more products/i });
@@ -235,6 +242,8 @@ describe('Purchase Page', () => {
     await waitFor(() => {
       expect(screen.getByText(/payment processing failed/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+      const backLink = screen.getByRole('link', { name: /back to products/i });
+      expect(backLink).toHaveAttribute('href', '/products');
     });
   });
 
@@ -260,6 +269,10 @@ describe('Purchase Page', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/already have an active policy/i)).toBeInTheDocument();
+      // The error message should be in an alert banner (CSS class, not role)
+      const errorBanner = screen.getByText(/already have an active policy/i).closest('.alert');
+      expect(errorBanner).toBeInTheDocument();
+      expect(errorBanner).toHaveClass('alert-error');
     });
   });
 
