@@ -249,6 +249,9 @@ describe('PolicyDetailPage', () => {
       expect(
         screen.getByText(/No claims submitted yet/i)
       ).toBeInTheDocument();
+      expect(
+        screen.getByRole('link', { name: /Submit a Claim/i })
+      ).toBeInTheDocument();
     });
   });
 

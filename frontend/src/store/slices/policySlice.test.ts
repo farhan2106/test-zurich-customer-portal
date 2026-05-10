@@ -184,6 +184,19 @@ describe('policySlice', () => {
       expect(state.items).toHaveLength(2);
       expect(state.items.find((p) => p.id === 'pol_new')).toEqual(newPolicy);
     });
+
+    it('sets error on rejected', () => {
+      const store = createTestStore();
+      store.dispatch(
+        purchasePolicy.rejected(
+          new Error('Purchase failed'),
+          'request-id',
+          'prod_auto'
+        )
+      );
+      expect(store.getState().policy.error).toBeTruthy();
+      expect(store.getState().policy.items).toHaveLength(0);
+    });
   });
 
   describe('renewPolicy', () => {

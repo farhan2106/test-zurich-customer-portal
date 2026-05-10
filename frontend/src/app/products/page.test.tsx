@@ -162,6 +162,7 @@ describe('ProductsPage', () => {
         'href',
         '/products/2'
       );
+      expect(learnMoreButtons[0].closest('a')).toHaveClass('btn-outline');
     });
 
     it('has "Purchase Now" button linking to /purchase?productId=[id]', async () => {
@@ -180,6 +181,7 @@ describe('ProductsPage', () => {
         'href',
         '/purchase?productId=2'
       );
+      expect(purchaseButtons[0].closest('a')).toHaveClass('btn-primary');
     });
   });
 
