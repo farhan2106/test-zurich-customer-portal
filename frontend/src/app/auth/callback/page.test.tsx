@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@/test-utils';
 import * as nextNavigation from 'next/navigation';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -22,7 +22,7 @@ jest.mock('next/navigation', () => ({
 // Mock jwt-decode with explicit factory for v4 compatibility
 jest.mock('jwt-decode', () => ({
   __esModule: true,
-  default: jest.fn(),
+  jwtDecode: jest.fn(),
 }));
 const mockedJwtDecode = jwtDecode as unknown as jest.Mock;
 

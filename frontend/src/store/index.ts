@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import policyReducer from './slices/policySlice';
+import claimReducer from './slices/claimSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     policy: policyReducer,
+    claim: claimReducer,
   },
   devTools: process.env.NODE_ENV !== 'production',
 });

@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { configureStore, ReducersMapObject } from '@reduxjs/toolkit';
 import authReducer from '@/store/slices/authSlice';
 import policyReducer from '@/store/slices/policySlice';
+import claimReducer from '@/store/slices/claimSlice';
 import type { RootState } from '@/store';
 
 interface ExtendedOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -21,8 +22,12 @@ export function renderWithProviders(
     additionalReducers,
     store = configureStore({
       reducer: {
-        auth: authReducer,
-        policy: policyReducer,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        auth: authReducer as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        policy: policyReducer as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        claim: claimReducer as any,
         ...additionalReducers,
       },
       preloadedState,
