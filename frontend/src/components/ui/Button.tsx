@@ -64,7 +64,8 @@ export function Button({
       {loading && (
         <span
           className={`loading loading-spinner ${spinnerSizes[size]}`}
-          aria-hidden="true"
+          role="status"
+          aria-label="Loading"
         />
       )}
       {children}

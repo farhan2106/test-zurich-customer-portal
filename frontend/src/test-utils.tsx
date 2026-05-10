@@ -3,6 +3,7 @@ import { render, RenderOptions } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore, ReducersMapObject } from '@reduxjs/toolkit';
 import authReducer from '@/store/slices/authSlice';
+import policyReducer from '@/store/slices/policySlice';
 import type { RootState } from '@/store';
 
 interface ExtendedOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -21,6 +22,7 @@ export function renderWithProviders(
     store = configureStore({
       reducer: {
         auth: authReducer,
+        policy: policyReducer,
         ...additionalReducers,
       },
       preloadedState,
