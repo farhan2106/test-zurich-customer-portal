@@ -175,4 +175,29 @@ export class CustomerService {
 
     return this.claimRepository.save(claim);
   }
+
+  async findClaimsByCustomerId(customerId: string): Promise<Claim[]> {
+    return this.claimRepository.find({
+      where: { customerId },
+      relations: ['policy'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findClaimById(id: string, customerId: string): Promise<Claim> {
+    const claim = await this.claimRepository.findOne({
+      where: { id },
+      relations: ['policy'],
+    });
+
+    if (!claim) {
+      throw new NotFoundException('Claim not found');
+    }
+
+    if (claim.customerId !== customerId) {
+      throw new ForbiddenException('You do not have access to this claim');
+    }
+
+    return claim;
+  }
 }

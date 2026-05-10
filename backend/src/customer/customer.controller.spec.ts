@@ -855,4 +855,330 @@ describe('CustomerController', () => {
       expect(hasJwtGuard).toBe(true);
     });
   });
+
+  describe('GET /api/claims', () => {
+    let claimsController: ClaimsController;
+
+    const mockClaims: Claim[] = [
+      {
+        id: 'clm_newest',
+        claimNumber: 'CLM-20260102-0002',
+        policyId: 'pol_abc123',
+        customerId: 'usr_abc123',
+        type: ClaimType.ACCIDENT,
+        description: 'Second claim filed',
+        incidentDate: new Date('2025-12-20'),
+        incidentLocation: 'Penang, Malaysia',
+        status: ClaimStatus.SUBMITTED,
+        createdAt: new Date('2025-12-21'),
+        updatedAt: new Date('2025-12-21'),
+        policy: {
+          id: 'pol_abc123',
+          policyNumber: 'POL-20260101-1234',
+          customerId: 'usr_abc123',
+          productId: 'prod_abc123',
+          status: PolicyStatus.ACTIVE,
+          startDate: new Date('2025-01-01'),
+          endDate: new Date('2027-01-01'),
+          premiumAmount: 500.0,
+          location: CustomerLocation.WEST_MALAYSIA,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          customer: {} as Customer,
+          product: {} as Product,
+          claims: [],
+        } as Policy,
+        customer: {} as Customer,
+      },
+      {
+        id: 'clm_oldest',
+        claimNumber: 'CLM-20260101-0001',
+        policyId: 'pol_abc123',
+        customerId: 'usr_abc123',
+        type: ClaimType.THEFT,
+        description: 'First claim filed',
+        incidentDate: new Date('2025-12-10'),
+        incidentLocation: 'Kuala Lumpur, Malaysia',
+        status: ClaimStatus.SUBMITTED,
+        createdAt: new Date('2025-12-11'),
+        updatedAt: new Date('2025-12-11'),
+        policy: {
+          id: 'pol_abc123',
+          policyNumber: 'POL-20260101-1234',
+          customerId: 'usr_abc123',
+          productId: 'prod_abc123',
+          status: PolicyStatus.ACTIVE,
+          startDate: new Date('2025-01-01'),
+          endDate: new Date('2027-01-01'),
+          premiumAmount: 500.0,
+          location: CustomerLocation.WEST_MALAYSIA,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          customer: {} as Customer,
+          product: {} as Product,
+          claims: [],
+        } as Policy,
+        customer: {} as Customer,
+      },
+    ];
+
+    const mockClaimResponses: ClaimResponseDto[] = mockClaims.map((c) =>
+      ClaimResponseDto.fromEntity(c),
+    );
+
+    beforeEach(async () => {
+      const mockService = {
+        findAllActiveProducts: jest.fn(),
+        findProductById: jest.fn(),
+        purchasePolicy: jest.fn(),
+        findPoliciesByCustomerId: jest.fn(),
+        findPolicyById: jest.fn(),
+        renewPolicy: jest.fn(),
+        submitClaim: jest.fn(),
+        findClaimsByCustomerId: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [CustomerController, PolicyController, ClaimsController],
+        providers: [
+          {
+            provide: CustomerService,
+            useValue: mockService,
+          },
+        ],
+      })
+        .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: jest.fn(() => true) })
+        .compile();
+
+      claimsController = module.get<ClaimsController>(ClaimsController);
+      customerService = module.get(CustomerService);
+    });
+
+    it('should return ClaimResponseDto[] sorted by createdAt descending for authenticated user', async () => {
+      customerService.findClaimsByCustomerId.mockResolvedValue(mockClaims);
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const result = await claimsController.list(mockReq);
+
+      expect(customerService.findClaimsByCustomerId).toHaveBeenCalledWith('usr_abc123');
+      expect(result).toBeInstanceOf(Array);
+      expect(result.length).toBe(2);
+      expect(result[0]).toBeInstanceOf(ClaimResponseDto);
+      expect(result[0].id).toBe('clm_newest');
+      expect(result[1].id).toBe('clm_oldest');
+    });
+
+    it('should return empty array when customer has no claims', async () => {
+      customerService.findClaimsByCustomerId.mockResolvedValue([]);
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const result = await claimsController.list(mockReq);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should return 200 with ClaimResponseDto[]', async () => {
+      customerService.findClaimsByCustomerId.mockResolvedValue(mockClaims);
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const result = await claimsController.list(mockReq);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].claimNumber).toBe('CLM-20260102-0002');
+      expect(result[1].claimNumber).toBe('CLM-20260101-0001');
+    });
+
+    it('should have JwtAuthGuard applied (class-level guard inherited by all methods)', () => {
+      const classGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        ClaimsController,
+      );
+      const methodGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        ClaimsController.prototype.list,
+      );
+
+      const allGuards = [...(classGuards || []), ...(methodGuards || [])];
+
+      expect(allGuards.length).toBeGreaterThan(0);
+      const hasJwtGuard = allGuards.some(
+        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+      );
+      expect(hasJwtGuard).toBe(true);
+    });
+
+    it('should have @ApiOperation decorator', () => {
+      const metadata = Reflect.getMetadata(
+        'swagger/apiOperation',
+        ClaimsController.prototype.list,
+      );
+      expect(metadata).toBeDefined();
+    });
+
+    it('should have @ApiResponse(200) decorator', () => {
+      const metadata = Reflect.getMetadata(
+        'swagger/apiResponse',
+        ClaimsController.prototype.list,
+      );
+      expect(metadata).toBeDefined();
+    });
+  });
+
+  describe('GET /api/claims/:id', () => {
+    let claimsController: ClaimsController;
+
+    const mockClaim: Claim = {
+      id: 'clm_abc123',
+      claimNumber: 'CLM-20260101-0001',
+      policyId: 'pol_abc123',
+      customerId: 'usr_abc123',
+      type: ClaimType.ACCIDENT,
+      description: 'Vehicle collision at intersection on main road',
+      incidentDate: new Date('2025-12-15'),
+      incidentLocation: 'Kuala Lumpur, Malaysia',
+      status: ClaimStatus.SUBMITTED,
+      createdAt: new Date('2025-12-16'),
+      updatedAt: new Date('2025-12-16'),
+      policy: {
+        id: 'pol_abc123',
+        policyNumber: 'POL-20260101-1234',
+        customerId: 'usr_abc123',
+        productId: 'prod_abc123',
+        status: PolicyStatus.ACTIVE,
+        startDate: new Date('2025-01-01'),
+        endDate: new Date('2027-01-01'),
+        premiumAmount: 500.0,
+        location: CustomerLocation.WEST_MALAYSIA,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        customer: {} as Customer,
+        product: {} as Product,
+        claims: [],
+      } as Policy,
+      customer: {} as Customer,
+    };
+
+    const mockClaimResponse: ClaimResponseDto = {
+      id: 'clm_abc123',
+      claimNumber: 'CLM-20260101-0001',
+      policyId: 'pol_abc123',
+      policyNumber: 'POL-20260101-1234',
+      customerId: 'usr_abc123',
+      type: ClaimType.ACCIDENT,
+      description: 'Vehicle collision at intersection on main road',
+      incidentDate: new Date('2025-12-15'),
+      incidentLocation: 'Kuala Lumpur, Malaysia',
+      status: ClaimStatus.SUBMITTED,
+    };
+
+    beforeEach(async () => {
+      const mockService = {
+        findAllActiveProducts: jest.fn(),
+        findProductById: jest.fn(),
+        purchasePolicy: jest.fn(),
+        findPoliciesByCustomerId: jest.fn(),
+        findPolicyById: jest.fn(),
+        renewPolicy: jest.fn(),
+        submitClaim: jest.fn(),
+        findClaimsByCustomerId: jest.fn(),
+        findClaimById: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        controllers: [CustomerController, PolicyController, ClaimsController],
+        providers: [
+          {
+            provide: CustomerService,
+            useValue: mockService,
+          },
+        ],
+      })
+        .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: jest.fn(() => true) })
+        .compile();
+
+      claimsController = module.get<ClaimsController>(ClaimsController);
+      customerService = module.get(CustomerService);
+    });
+
+    it('should return ClaimResponseDto with denormalized policyNumber when claim belongs to authenticated user', async () => {
+      customerService.findClaimById.mockResolvedValue(mockClaim);
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const result = await claimsController.detail(mockReq, 'clm_abc123');
+
+      expect(customerService.findClaimById).toHaveBeenCalledWith('clm_abc123', 'usr_abc123');
+      expect(result).toBeInstanceOf(ClaimResponseDto);
+      expect(result).toEqual(mockClaimResponse);
+      expect(result.policyNumber).toBe('POL-20260101-1234');
+    });
+
+    it('should throw NotFoundException (404) when claim not found', async () => {
+      customerService.findClaimById.mockRejectedValue(
+        new NotFoundException('Claim not found'),
+      );
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      await expect(claimsController.detail(mockReq, 'nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(customerService.findClaimById).toHaveBeenCalledWith('nonexistent', 'usr_abc123');
+    });
+
+    it('should throw ForbiddenException (403) when claim belongs to another customer', async () => {
+      customerService.findClaimById.mockRejectedValue(
+        new ForbiddenException('You do not have access to this claim'),
+      );
+
+      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      await expect(claimsController.detail(mockReq, 'clm_other')).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      expect(customerService.findClaimById).toHaveBeenCalledWith('clm_other', 'usr_abc123');
+    });
+
+    it('should have @ApiParam decorator for id', () => {
+      const metadata = Reflect.getMetadata(
+        'swagger/apiParameters',
+        ClaimsController.prototype.detail,
+      );
+      expect(metadata).toBeDefined();
+      expect(Array.isArray(metadata)).toBe(true);
+
+      const hasIdParam = metadata!.some(
+        (param: any) => param.name === 'id' || param.in === 'path',
+      );
+      expect(hasIdParam).toBe(true);
+    });
+
+    it('should have JwtAuthGuard applied (class-level guard inherited by all methods)', () => {
+      const classGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        ClaimsController,
+      );
+      const methodGuards: any[] | undefined = Reflect.getMetadata(
+        '__guards__',
+        ClaimsController.prototype.detail,
+      );
+
+      const allGuards = [...(classGuards || []), ...(methodGuards || [])];
+
+      expect(allGuards.length).toBeGreaterThan(0);
+      const hasJwtGuard = allGuards.some(
+        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+      );
+      expect(hasJwtGuard).toBe(true);
+    });
+
+    it('should have @ApiOperation decorator', () => {
+      const metadata = Reflect.getMetadata(
+        'swagger/apiOperation',
+        ClaimsController.prototype.detail,
+      );
+      expect(metadata).toBeDefined();
+    });
+  });
 });

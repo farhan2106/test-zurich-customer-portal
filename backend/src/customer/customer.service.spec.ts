@@ -1096,4 +1096,310 @@ describe('CustomerService', () => {
       expect(result).toEqual(savedClaim);
     });
   });
+
+  describe('findClaimsByCustomerId()', () => {
+    let serviceWithClaims: CustomerService;
+    let claimRepo: jest.Mocked<Repository<Claim>>;
+
+    const mockCustomer: Customer = {
+      id: 'usr_abc123',
+      email: 'test@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      photoUrl: null,
+      location: CustomerLocation.WEST_MALAYSIA,
+      premiumPaid: 0,
+      role: 'customer',
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-01-01'),
+      policies: [],
+      claims: [],
+    };
+
+    const mockPolicy: Policy = {
+      id: 'pol_abc123',
+      policyNumber: 'POL-20260101-0001',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2025-01-01'),
+      endDate: new Date('2027-01-01'),
+      premiumAmount: 500.0,
+      location: CustomerLocation.WEST_MALAYSIA,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      customer: mockCustomer,
+      product: {} as Product,
+      claims: [],
+    };
+
+    const mockClaims: Claim[] = [
+      {
+        id: 'clm_newest',
+        claimNumber: 'CLM-20260102-0002',
+        policyId: 'pol_abc123',
+        customerId: 'usr_abc123',
+        type: ClaimType.ACCIDENT,
+        description: 'Second claim',
+        incidentDate: new Date('2025-12-20'),
+        incidentLocation: 'Penang, Malaysia',
+        status: ClaimStatus.SUBMITTED,
+        createdAt: new Date('2025-12-21'),
+        updatedAt: new Date('2025-12-21'),
+        policy: mockPolicy,
+        customer: mockCustomer,
+      },
+      {
+        id: 'clm_oldest',
+        claimNumber: 'CLM-20260101-0001',
+        policyId: 'pol_abc123',
+        customerId: 'usr_abc123',
+        type: ClaimType.THEFT,
+        description: 'First claim',
+        incidentDate: new Date('2025-12-10'),
+        incidentLocation: 'Kuala Lumpur, Malaysia',
+        status: ClaimStatus.SUBMITTED,
+        createdAt: new Date('2025-12-11'),
+        updatedAt: new Date('2025-12-11'),
+        policy: mockPolicy,
+        customer: mockCustomer,
+      },
+    ];
+
+    beforeEach(async () => {
+      const mockProductRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockPolicyRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockCustomerRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockClaimRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CustomerService,
+          {
+            provide: getRepositoryToken(Product),
+            useValue: mockProductRepo,
+          },
+          {
+            provide: getRepositoryToken(Policy),
+            useValue: mockPolicyRepo,
+          },
+          {
+            provide: getRepositoryToken(Customer),
+            useValue: mockCustomerRepo,
+          },
+          {
+            provide: getRepositoryToken(Claim),
+            useValue: mockClaimRepo,
+          },
+        ],
+      }).compile();
+
+      serviceWithClaims = module.get<CustomerService>(CustomerService);
+      claimRepo = module.get(getRepositoryToken(Claim));
+    });
+
+    it('should return claims sorted by createdAt DESC for the given customerId', async () => {
+      claimRepo.find.mockResolvedValue(mockClaims);
+
+      const result = await serviceWithClaims.findClaimsByCustomerId('usr_abc123');
+
+      expect(claimRepo.find).toHaveBeenCalledWith({
+        where: { customerId: 'usr_abc123' },
+        relations: ['policy'],
+        order: { createdAt: 'DESC' },
+      });
+      expect(result).toEqual(mockClaims);
+    });
+
+    it('should return empty array when customer has no claims', async () => {
+      claimRepo.find.mockResolvedValue([]);
+
+      const result = await serviceWithClaims.findClaimsByCustomerId('usr_abc123');
+
+      expect(result).toEqual([]);
+    });
+
+    it('should call find with correct where, relations, and order clauses', async () => {
+      claimRepo.find.mockResolvedValue([]);
+
+      await serviceWithClaims.findClaimsByCustomerId('usr_xyz789');
+
+      expect(claimRepo.find).toHaveBeenCalledWith({
+        where: { customerId: 'usr_xyz789' },
+        relations: ['policy'],
+        order: { createdAt: 'DESC' },
+      });
+    });
+  });
+
+  describe('findClaimById()', () => {
+    let serviceWithClaim: CustomerService;
+    let claimRepo: jest.Mocked<Repository<Claim>>;
+
+    const mockCustomer: Customer = {
+      id: 'usr_abc123',
+      email: 'test@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      photoUrl: null,
+      location: CustomerLocation.WEST_MALAYSIA,
+      premiumPaid: 0,
+      role: 'customer',
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-01-01'),
+      policies: [],
+      claims: [],
+    };
+
+    const mockPolicy: Policy = {
+      id: 'pol_abc123',
+      policyNumber: 'POL-20260101-0001',
+      customerId: 'usr_abc123',
+      productId: 'prod_abc123',
+      status: PolicyStatus.ACTIVE,
+      startDate: new Date('2025-01-01'),
+      endDate: new Date('2027-01-01'),
+      premiumAmount: 500.0,
+      location: CustomerLocation.WEST_MALAYSIA,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      customer: mockCustomer,
+      product: {} as Product,
+      claims: [],
+    };
+
+    const mockClaim: Claim = {
+      id: 'clm_abc123',
+      claimNumber: 'CLM-20260101-0001',
+      policyId: 'pol_abc123',
+      customerId: 'usr_abc123',
+      type: ClaimType.ACCIDENT,
+      description: 'Vehicle collision',
+      incidentDate: new Date('2025-12-15'),
+      incidentLocation: 'Kuala Lumpur, Malaysia',
+      status: ClaimStatus.SUBMITTED,
+      createdAt: new Date('2025-12-16'),
+      updatedAt: new Date('2025-12-16'),
+      policy: mockPolicy,
+      customer: mockCustomer,
+    };
+
+    beforeEach(async () => {
+      const mockProductRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockPolicyRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockCustomerRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockClaimRepo = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          CustomerService,
+          {
+            provide: getRepositoryToken(Product),
+            useValue: mockProductRepo,
+          },
+          {
+            provide: getRepositoryToken(Policy),
+            useValue: mockPolicyRepo,
+          },
+          {
+            provide: getRepositoryToken(Customer),
+            useValue: mockCustomerRepo,
+          },
+          {
+            provide: getRepositoryToken(Claim),
+            useValue: mockClaimRepo,
+          },
+        ],
+      }).compile();
+
+      serviceWithClaim = module.get<CustomerService>(CustomerService);
+      claimRepo = module.get(getRepositoryToken(Claim));
+    });
+
+    it('should return claim with policy relation when found and belongs to customer', async () => {
+      claimRepo.findOne.mockResolvedValue(mockClaim);
+
+      const result = await serviceWithClaim.findClaimById('clm_abc123', 'usr_abc123');
+
+      expect(claimRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'clm_abc123' },
+        relations: ['policy'],
+      });
+      expect(result).toEqual(mockClaim);
+      expect(result.policy).toBeDefined();
+      expect(result.policy?.policyNumber).toBe('POL-20260101-0001');
+    });
+
+    it('should throw NotFoundException when claim not found', async () => {
+      claimRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        serviceWithClaim.findClaimById('nonexistent', 'usr_abc123'),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(claimRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'nonexistent' },
+        relations: ['policy'],
+      });
+    });
+
+    it('should throw ForbiddenException when claim belongs to different customer', async () => {
+      claimRepo.findOne.mockResolvedValue(mockClaim);
+
+      await expect(
+        serviceWithClaim.findClaimById('clm_abc123', 'usr_different'),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(claimRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'clm_abc123' },
+        relations: ['policy'],
+      });
+    });
+  });
 });

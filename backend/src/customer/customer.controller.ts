@@ -107,4 +107,25 @@ export class ClaimsController {
     const claim = await this.customerService.submitClaim(user.sub, dto);
     return ClaimResponseDto.fromEntity(claim);
   }
+
+  @Get()
+  @ApiOperation({ summary: 'List claims for authenticated user' })
+  @ApiResponse({ status: 200, description: 'Claims retrieved', type: [ClaimResponseDto] })
+  async list(@Req() req: Request): Promise<ClaimResponseDto[]> {
+    const user = req.user as JwtUser;
+    const claims = await this.customerService.findClaimsByCustomerId(user.sub);
+    return claims.map(ClaimResponseDto.fromEntity);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get claim details' })
+  @ApiParam({ name: 'id', description: 'Claim UUID', example: 'clm_abc123' })
+  @ApiResponse({ status: 200, description: 'Claim details', type: ClaimResponseDto })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  @ApiResponse({ status: 404, description: 'Claim not found' })
+  async detail(@Req() req: Request, @Param('id') id: string): Promise<ClaimResponseDto> {
+    const user = req.user as JwtUser;
+    const claim = await this.customerService.findClaimById(id, user.sub);
+    return ClaimResponseDto.fromEntity(claim);
+  }
 }
