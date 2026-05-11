@@ -1,5 +1,5 @@
 import { Profile } from 'passport-google-oauth20';
-import { AuthService, GoogleProfile } from './auth.service';
+import { AuthService } from './auth.service';
 import { GoogleStrategy } from './google.strategy';
 
 describe('GoogleStrategy', () => {

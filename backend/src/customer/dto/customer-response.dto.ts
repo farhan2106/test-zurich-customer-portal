@@ -18,10 +18,14 @@ export class CustomerResponseDto {
   @ApiProperty({ description: 'Google profile photo URL', example: 'https://...', nullable: true })
   photoUrl: string | null;
 
-  @ApiProperty({ description: 'Customer location', enum: CustomerLocation, example: 'West Malaysia' })
+  @ApiProperty({
+    description: 'Customer location',
+    enum: CustomerLocation,
+    example: 'West Malaysia',
+  })
   location: CustomerLocation;
 
-  @ApiProperty({ description: 'Total premium paid (MYR)', example: 2500.00 })
+  @ApiProperty({ description: 'Total premium paid (MYR)', example: 2500.0 })
   premiumPaid: number;
 
   @ApiProperty({ description: 'Customer role', enum: CustomerRole, example: 'customer' })

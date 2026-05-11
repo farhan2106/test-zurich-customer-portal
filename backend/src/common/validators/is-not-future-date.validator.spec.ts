@@ -17,7 +17,7 @@ describe('IsNotFutureDate Validator', () => {
     expect(dateErrors.length).toBe(0);
   });
 
-  it('should pass validation for today\'s date', () => {
+  it("should pass validation for today's date", () => {
     const dto = new TestDto();
     dto.date = new Date().toISOString().slice(0, 10);
 

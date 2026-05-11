@@ -25,7 +25,7 @@ export class PolicyResponseDto {
   @ApiProperty({ description: 'Policy end date (12 months from start)' })
   endDate: Date;
 
-  @ApiProperty({ description: 'Premium amount in MYR', example: 500.00 })
+  @ApiProperty({ description: 'Premium amount in MYR', example: 500.0 })
   premiumAmount: number;
 
   @ApiProperty({ enum: CustomerLocation, example: CustomerLocation.WEST_MALAYSIA })

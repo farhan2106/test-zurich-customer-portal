@@ -1,7 +1,17 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
-import { CustomerController, PolicyController, ClaimsController, AdminCustomerController } from './customer.controller';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
+import {
+  CustomerController,
+  PolicyController,
+  ClaimsController,
+  AdminCustomerController,
+} from './customer.controller';
 import { CustomerService } from './customer.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -11,16 +21,21 @@ import { ClaimResponseDto } from './dto/claim-response.dto';
 import { CustomerResponseDto } from './dto/customer-response.dto';
 import { AdminCustomerDetailDto } from './dto/admin-customer-detail.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { CreatePolicyDto } from './dto/create-policy.dto';
 import { CreateClaimDto } from './dto/create-claim.dto';
 import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
 import { Customer } from '../entities/customer.entity';
 import { Claim } from '../entities/claim.entity';
-import { ProductStatus, PolicyStatus, CustomerLocation, CustomerRole, ClaimType, ClaimStatus } from '../entities/enums';
+import {
+  ProductStatus,
+  PolicyStatus,
+  CustomerLocation,
+  CustomerRole,
+  ClaimType,
+  ClaimStatus,
+} from '../entities/enums';
 
 import type { Request } from 'express';
-import { JwtUser } from '../auth/jwt.strategy';
 
 describe('CustomerController', () => {
   let controller: CustomerController;
@@ -104,10 +119,7 @@ describe('CustomerController', () => {
 
     it('should have JwtAuthGuard applied (class-level guard inherited by all methods)', () => {
       // Class-level @UseGuards(JwtAuthGuard) stores on the class constructor
-      const classGuards: any[] | undefined = Reflect.getMetadata(
-        '__guards__',
-        CustomerController,
-      );
+      const classGuards: any[] | undefined = Reflect.getMetadata('__guards__', CustomerController);
       const methodGuards: any[] | undefined = Reflect.getMetadata(
         '__guards__',
         CustomerController.prototype.getProducts,
@@ -117,7 +129,7 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
@@ -142,8 +154,11 @@ describe('CustomerController', () => {
       // @ApiBearerAuth() is applied at class level (line 10 of controller)
       // It stores metadata under 'swagger/apiSecurity' via nestjs/swagger
       const classMetadata = Reflect.getMetadata('swagger/apiSecurity', CustomerController);
-      const methodMetadata = Reflect.getMetadata('swagger/apiSecurity', CustomerController.prototype.getProducts);
-      
+      const methodMetadata = Reflect.getMetadata(
+        'swagger/apiSecurity',
+        CustomerController.prototype.getProducts,
+      );
+
       // At least one of class or method should have the security metadata
       const hasApiBearerAuth = classMetadata !== undefined || methodMetadata !== undefined;
       expect(hasApiBearerAuth).toBe(true);
@@ -162,10 +177,7 @@ describe('CustomerController', () => {
     });
 
     it('should have JwtAuthGuard applied to getProductById (class-level guard inherited)', () => {
-      const classGuards: any[] | undefined = Reflect.getMetadata(
-        '__guards__',
-        CustomerController,
-      );
+      const classGuards: any[] | undefined = Reflect.getMetadata('__guards__', CustomerController);
       const methodGuards: any[] | undefined = Reflect.getMetadata(
         '__guards__',
         CustomerController.prototype.getProductById,
@@ -175,19 +187,15 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
 
     it('should propagate NotFoundException from service (404)', async () => {
-      customerService.findProductById.mockRejectedValue(
-        new NotFoundException('Product not found'),
-      );
+      customerService.findProductById.mockRejectedValue(new NotFoundException('Product not found'));
 
-      await expect(controller.getProductById('nonexistent_id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(controller.getProductById('nonexistent_id')).rejects.toThrow(NotFoundException);
 
       expect(customerService.findProductById).toHaveBeenCalledWith('nonexistent_id');
     });
@@ -200,9 +208,7 @@ describe('CustomerController', () => {
       expect(metadata).toBeDefined();
       expect(Array.isArray(metadata)).toBe(true);
 
-      const hasIdParam = metadata!.some(
-        (param: any) => param.name === 'id' || param.in === 'path',
-      );
+      const hasIdParam = metadata!.some((param: any) => param.name === 'id' || param.in === 'path');
       expect(hasIdParam).toBe(true);
     });
   });
@@ -263,15 +269,11 @@ describe('CustomerController', () => {
     it('should return 201 with PolicyResponseDto on successful purchase', async () => {
       customerService.purchasePolicy.mockResolvedValue(mockPolicy);
 
-      const result = await policyController.purchase(
-        { user: { sub: 'usr_abc123' } } as any,
-        { productId: 'prod_abc123' },
-      );
+      const result = await policyController.purchase({ user: { sub: 'usr_abc123' } } as any, {
+        productId: 'prod_abc123',
+      });
 
-      expect(customerService.purchasePolicy).toHaveBeenCalledWith(
-        'usr_abc123',
-        'prod_abc123',
-      );
+      expect(customerService.purchasePolicy).toHaveBeenCalledWith('usr_abc123', 'prod_abc123');
       expect(result).toBeInstanceOf(PolicyResponseDto);
       expect(result).toEqual(mockPolicyResponse);
     });
@@ -282,16 +284,12 @@ describe('CustomerController', () => {
       );
 
       await expect(
-        policyController.purchase(
-          { user: { sub: 'usr_abc123' } } as any,
-          { productId: 'nonexistent' },
-        ),
+        policyController.purchase({ user: { sub: 'usr_abc123' } } as any, {
+          productId: 'nonexistent',
+        }),
       ).rejects.toThrow(BadRequestException);
 
-      expect(customerService.purchasePolicy).toHaveBeenCalledWith(
-        'usr_abc123',
-        'nonexistent',
-      );
+      expect(customerService.purchasePolicy).toHaveBeenCalledWith('usr_abc123', 'nonexistent');
     });
 
     it('should return 409 when duplicate policy (propagates ConflictException)', async () => {
@@ -300,23 +298,16 @@ describe('CustomerController', () => {
       );
 
       await expect(
-        policyController.purchase(
-          { user: { sub: 'usr_abc123' } } as any,
-          { productId: 'prod_abc123' },
-        ),
+        policyController.purchase({ user: { sub: 'usr_abc123' } } as any, {
+          productId: 'prod_abc123',
+        }),
       ).rejects.toThrow(ConflictException);
 
-      expect(customerService.purchasePolicy).toHaveBeenCalledWith(
-        'usr_abc123',
-        'prod_abc123',
-      );
+      expect(customerService.purchasePolicy).toHaveBeenCalledWith('usr_abc123', 'prod_abc123');
     });
 
     it('should have JwtAuthGuard applied (class-level guard inherited by all methods)', () => {
-      const classGuards: any[] | undefined = Reflect.getMetadata(
-        '__guards__',
-        PolicyController,
-      );
+      const classGuards: any[] | undefined = Reflect.getMetadata('__guards__', PolicyController);
       const methodGuards: any[] | undefined = Reflect.getMetadata(
         '__guards__',
         PolicyController.prototype.purchase,
@@ -326,7 +317,7 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
@@ -374,22 +365,24 @@ describe('CustomerController', () => {
   });
 
   describe('GET /api/policies', () => {
-    const mockPolicies: Policy[] = [{
-      id: 'pol_abc123',
-      policyNumber: 'POL-20260101-1234',
-      customerId: 'usr_abc123',
-      productId: 'prod_abc123',
-      status: PolicyStatus.ACTIVE,
-      startDate: new Date('2026-01-01'),
-      endDate: new Date('2027-01-01'),
-      premiumAmount: 500.0,
-      location: CustomerLocation.WEST_MALAYSIA,
-      createdAt: new Date('2026-01-01'),
-      updatedAt: new Date('2026-01-01'),
-      customer: {} as Customer,
-      product: mockProduct,
-      claims: [],
-    }];
+    const mockPolicies: Policy[] = [
+      {
+        id: 'pol_abc123',
+        policyNumber: 'POL-20260101-1234',
+        customerId: 'usr_abc123',
+        productId: 'prod_abc123',
+        status: PolicyStatus.ACTIVE,
+        startDate: new Date('2026-01-01'),
+        endDate: new Date('2027-01-01'),
+        premiumAmount: 500.0,
+        location: CustomerLocation.WEST_MALAYSIA,
+        createdAt: new Date('2026-01-01'),
+        updatedAt: new Date('2026-01-01'),
+        customer: {} as Customer,
+        product: mockProduct,
+        claims: [],
+      },
+    ];
 
     const mockPolicyResponse: PolicyResponseDto = {
       id: 'pol_abc123',
@@ -419,7 +412,7 @@ describe('CustomerController', () => {
     it('should return PolicyResponseDto[] for authenticated user policies', async () => {
       customerService.findPoliciesByCustomerId.mockResolvedValue(mockPolicies);
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       const result = await policyController.list(mockReq);
 
       expect(customerService.findPoliciesByCustomerId).toHaveBeenCalledWith('usr_abc123');
@@ -432,17 +425,14 @@ describe('CustomerController', () => {
     it('should return empty array when user has no policies', async () => {
       customerService.findPoliciesByCustomerId.mockResolvedValue([]);
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       const result = await policyController.list(mockReq);
 
       expect(result).toEqual([]);
     });
 
     it('should have JwtAuthGuard applied (class-level check)', () => {
-      const classGuards: any[] | undefined = Reflect.getMetadata(
-        '__guards__',
-        PolicyController,
-      );
+      const classGuards: any[] | undefined = Reflect.getMetadata('__guards__', PolicyController);
       const methodGuards: any[] | undefined = Reflect.getMetadata(
         '__guards__',
         PolicyController.prototype.list,
@@ -452,16 +442,13 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
 
     it('should have @ApiOperation decorator', () => {
-      const metadata = Reflect.getMetadata(
-        'swagger/apiOperation',
-        PolicyController.prototype.list,
-      );
+      const metadata = Reflect.getMetadata('swagger/apiOperation', PolicyController.prototype.list);
       expect(metadata).toBeDefined();
     });
   });
@@ -512,7 +499,7 @@ describe('CustomerController', () => {
     it('should return PolicyResponseDto with product and claims for the found policy', async () => {
       customerService.findPolicyById.mockResolvedValue(mockPolicy);
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       const result = await policyController.detail(mockReq, 'pol_abc123');
 
       expect(customerService.findPolicyById).toHaveBeenCalledWith('pol_abc123', 'usr_abc123');
@@ -521,22 +508,18 @@ describe('CustomerController', () => {
     });
 
     it('should throw NotFoundException (404) when policy not found', async () => {
-      customerService.findPolicyById.mockRejectedValue(
-        new NotFoundException('Policy not found'),
-      );
+      customerService.findPolicyById.mockRejectedValue(new NotFoundException('Policy not found'));
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       await expect(policyController.detail(mockReq, 'nonexistent')).rejects.toThrow(
         NotFoundException,
       );
     });
 
     it('should throw ForbiddenException (403) when policy belongs to another customer', async () => {
-      customerService.findPolicyById.mockRejectedValue(
-        new ForbiddenException('Access denied'),
-      );
+      customerService.findPolicyById.mockRejectedValue(new ForbiddenException('Access denied'));
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       await expect(policyController.detail(mockReq, 'pol_other')).rejects.toThrow(
         ForbiddenException,
       );
@@ -550,17 +533,12 @@ describe('CustomerController', () => {
       expect(metadata).toBeDefined();
       expect(Array.isArray(metadata)).toBe(true);
 
-      const hasIdParam = metadata!.some(
-        (param: any) => param.name === 'id' || param.in === 'path',
-      );
+      const hasIdParam = metadata!.some((param: any) => param.name === 'id' || param.in === 'path');
       expect(hasIdParam).toBe(true);
     });
 
     it('should have JwtAuthGuard applied', () => {
-      const classGuards: any[] | undefined = Reflect.getMetadata(
-        '__guards__',
-        PolicyController,
-      );
+      const classGuards: any[] | undefined = Reflect.getMetadata('__guards__', PolicyController);
       const methodGuards: any[] | undefined = Reflect.getMetadata(
         '__guards__',
         PolicyController.prototype.detail,
@@ -570,7 +548,7 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
@@ -622,7 +600,7 @@ describe('CustomerController', () => {
     it('should return updated PolicyResponseDto with extended endDate (365 days added)', async () => {
       customerService.renewPolicy.mockResolvedValue(mockRenewedPolicy);
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       const result = await policyController.renew(mockReq, 'pol_abc123');
 
       expect(customerService.renewPolicy).toHaveBeenCalledWith('pol_abc123', 'usr_abc123');
@@ -631,11 +609,9 @@ describe('CustomerController', () => {
     });
 
     it('should throw NotFoundException (404) when policy not found', async () => {
-      customerService.renewPolicy.mockRejectedValue(
-        new NotFoundException('Policy not found'),
-      );
+      customerService.renewPolicy.mockRejectedValue(new NotFoundException('Policy not found'));
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       await expect(policyController.renew(mockReq, 'nonexistent')).rejects.toThrow(
         NotFoundException,
       );
@@ -646,17 +622,14 @@ describe('CustomerController', () => {
         new BadRequestException('Policy is not renewable'),
       );
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       await expect(policyController.renew(mockReq, 'pol_abc123')).rejects.toThrow(
         BadRequestException,
       );
     });
 
     it('should have JwtAuthGuard applied', () => {
-      const classGuards: any[] | undefined = Reflect.getMetadata(
-        '__guards__',
-        PolicyController,
-      );
+      const classGuards: any[] | undefined = Reflect.getMetadata('__guards__', PolicyController);
       const methodGuards: any[] | undefined = Reflect.getMetadata(
         '__guards__',
         PolicyController.prototype.renew,
@@ -666,7 +639,7 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
@@ -717,7 +690,7 @@ describe('CustomerController', () => {
         customer: {} as Customer,
         product: {} as Product,
         claims: [],
-      } as Policy,
+      },
       customer: {} as Customer,
     };
 
@@ -778,10 +751,7 @@ describe('CustomerController', () => {
         mockCreateClaimDto,
       );
 
-      expect(customerService.submitClaim).toHaveBeenCalledWith(
-        'usr_abc123',
-        mockCreateClaimDto,
-      );
+      expect(customerService.submitClaim).toHaveBeenCalledWith('usr_abc123', mockCreateClaimDto);
       expect(result).toBeInstanceOf(ClaimResponseDto);
       expect(result).toEqual(mockClaimResponse);
     });
@@ -792,16 +762,10 @@ describe('CustomerController', () => {
       );
 
       await expect(
-        claimsController.create(
-          { user: { sub: 'usr_abc123' } } as any,
-          mockCreateClaimDto,
-        ),
+        claimsController.create({ user: { sub: 'usr_abc123' } } as any, mockCreateClaimDto),
       ).rejects.toThrow(BadRequestException);
 
-      expect(customerService.submitClaim).toHaveBeenCalledWith(
-        'usr_abc123',
-        mockCreateClaimDto,
-      );
+      expect(customerService.submitClaim).toHaveBeenCalledWith('usr_abc123', mockCreateClaimDto);
     });
 
     it('should return 403 when policy not owned by customer (propagates ForbiddenException)', async () => {
@@ -810,41 +774,24 @@ describe('CustomerController', () => {
       );
 
       await expect(
-        claimsController.create(
-          { user: { sub: 'usr_abc123' } } as any,
-          mockCreateClaimDto,
-        ),
+        claimsController.create({ user: { sub: 'usr_abc123' } } as any, mockCreateClaimDto),
       ).rejects.toThrow(ForbiddenException);
 
-      expect(customerService.submitClaim).toHaveBeenCalledWith(
-        'usr_abc123',
-        mockCreateClaimDto,
-      );
+      expect(customerService.submitClaim).toHaveBeenCalledWith('usr_abc123', mockCreateClaimDto);
     });
 
     it('should return 404 when policy not found (propagates NotFoundException)', async () => {
-      customerService.submitClaim.mockRejectedValue(
-        new NotFoundException('Policy not found'),
-      );
+      customerService.submitClaim.mockRejectedValue(new NotFoundException('Policy not found'));
 
       await expect(
-        claimsController.create(
-          { user: { sub: 'usr_abc123' } } as any,
-          mockCreateClaimDto,
-        ),
+        claimsController.create({ user: { sub: 'usr_abc123' } } as any, mockCreateClaimDto),
       ).rejects.toThrow(NotFoundException);
 
-      expect(customerService.submitClaim).toHaveBeenCalledWith(
-        'usr_abc123',
-        mockCreateClaimDto,
-      );
+      expect(customerService.submitClaim).toHaveBeenCalledWith('usr_abc123', mockCreateClaimDto);
     });
 
     it('should have JwtAuthGuard applied (class-level guard inherited by all methods)', () => {
-      const classGuards: any[] | undefined = Reflect.getMetadata(
-        '__guards__',
-        ClaimsController,
-      );
+      const classGuards: any[] | undefined = Reflect.getMetadata('__guards__', ClaimsController);
       const methodGuards: any[] | undefined = Reflect.getMetadata(
         '__guards__',
         ClaimsController.prototype.create,
@@ -854,7 +801,7 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
@@ -891,7 +838,7 @@ describe('CustomerController', () => {
           customer: {} as Customer,
           product: {} as Product,
           claims: [],
-        } as Policy,
+        },
         customer: {} as Customer,
       },
       {
@@ -921,14 +868,10 @@ describe('CustomerController', () => {
           customer: {} as Customer,
           product: {} as Product,
           claims: [],
-        } as Policy,
+        },
         customer: {} as Customer,
       },
     ];
-
-    const mockClaimResponses: ClaimResponseDto[] = mockClaims.map((c) =>
-      ClaimResponseDto.fromEntity(c),
-    );
 
     beforeEach(async () => {
       const mockService = {
@@ -962,7 +905,7 @@ describe('CustomerController', () => {
     it('should return ClaimResponseDto[] sorted by createdAt descending for authenticated user', async () => {
       customerService.findClaimsByCustomerId.mockResolvedValue(mockClaims);
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       const result = await claimsController.list(mockReq);
 
       expect(customerService.findClaimsByCustomerId).toHaveBeenCalledWith('usr_abc123');
@@ -976,7 +919,7 @@ describe('CustomerController', () => {
     it('should return empty array when customer has no claims', async () => {
       customerService.findClaimsByCustomerId.mockResolvedValue([]);
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       const result = await claimsController.list(mockReq);
 
       expect(result).toEqual([]);
@@ -985,7 +928,7 @@ describe('CustomerController', () => {
     it('should return 200 with ClaimResponseDto[]', async () => {
       customerService.findClaimsByCustomerId.mockResolvedValue(mockClaims);
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       const result = await claimsController.list(mockReq);
 
       expect(result).toHaveLength(2);
@@ -994,10 +937,7 @@ describe('CustomerController', () => {
     });
 
     it('should have JwtAuthGuard applied (class-level guard inherited by all methods)', () => {
-      const classGuards: any[] | undefined = Reflect.getMetadata(
-        '__guards__',
-        ClaimsController,
-      );
+      const classGuards: any[] | undefined = Reflect.getMetadata('__guards__', ClaimsController);
       const methodGuards: any[] | undefined = Reflect.getMetadata(
         '__guards__',
         ClaimsController.prototype.list,
@@ -1007,24 +947,18 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
 
     it('should have @ApiOperation decorator', () => {
-      const metadata = Reflect.getMetadata(
-        'swagger/apiOperation',
-        ClaimsController.prototype.list,
-      );
+      const metadata = Reflect.getMetadata('swagger/apiOperation', ClaimsController.prototype.list);
       expect(metadata).toBeDefined();
     });
 
     it('should have @ApiResponse(200) decorator', () => {
-      const metadata = Reflect.getMetadata(
-        'swagger/apiResponse',
-        ClaimsController.prototype.list,
-      );
+      const metadata = Reflect.getMetadata('swagger/apiResponse', ClaimsController.prototype.list);
       expect(metadata).toBeDefined();
     });
   });
@@ -1059,7 +993,7 @@ describe('CustomerController', () => {
         customer: {} as Customer,
         product: {} as Product,
         claims: [],
-      } as Policy,
+      },
       customer: {} as Customer,
     };
 
@@ -1109,7 +1043,7 @@ describe('CustomerController', () => {
     it('should return ClaimResponseDto with denormalized policyNumber when claim belongs to authenticated user', async () => {
       customerService.findClaimById.mockResolvedValue(mockClaim);
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       const result = await claimsController.detail(mockReq, 'clm_abc123');
 
       expect(customerService.findClaimById).toHaveBeenCalledWith('clm_abc123', 'usr_abc123');
@@ -1119,11 +1053,9 @@ describe('CustomerController', () => {
     });
 
     it('should throw NotFoundException (404) when claim not found', async () => {
-      customerService.findClaimById.mockRejectedValue(
-        new NotFoundException('Claim not found'),
-      );
+      customerService.findClaimById.mockRejectedValue(new NotFoundException('Claim not found'));
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       await expect(claimsController.detail(mockReq, 'nonexistent')).rejects.toThrow(
         NotFoundException,
       );
@@ -1136,7 +1068,7 @@ describe('CustomerController', () => {
         new ForbiddenException('You do not have access to this claim'),
       );
 
-      const mockReq = { user: { sub: 'usr_abc123' } as JwtUser } as Request;
+      const mockReq = { user: { sub: 'usr_abc123' } } as Request;
       await expect(claimsController.detail(mockReq, 'clm_other')).rejects.toThrow(
         ForbiddenException,
       );
@@ -1152,17 +1084,12 @@ describe('CustomerController', () => {
       expect(metadata).toBeDefined();
       expect(Array.isArray(metadata)).toBe(true);
 
-      const hasIdParam = metadata!.some(
-        (param: any) => param.name === 'id' || param.in === 'path',
-      );
+      const hasIdParam = metadata!.some((param: any) => param.name === 'id' || param.in === 'path');
       expect(hasIdParam).toBe(true);
     });
 
     it('should have JwtAuthGuard applied (class-level guard inherited by all methods)', () => {
-      const classGuards: any[] | undefined = Reflect.getMetadata(
-        '__guards__',
-        ClaimsController,
-      );
+      const classGuards: any[] | undefined = Reflect.getMetadata('__guards__', ClaimsController);
       const methodGuards: any[] | undefined = Reflect.getMetadata(
         '__guards__',
         ClaimsController.prototype.detail,
@@ -1172,7 +1099,7 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
@@ -1197,7 +1124,7 @@ describe('CustomerController', () => {
         lastName: 'Doe',
         photoUrl: null,
         location: CustomerLocation.WEST_MALAYSIA,
-        premiumPaid: 1500.50,
+        premiumPaid: 1500.5,
         role: CustomerRole.CUSTOMER,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-06-15'),
@@ -1236,10 +1163,17 @@ describe('CustomerController', () => {
         findClaimsByCustomerId: jest.fn(),
         findClaimById: jest.fn(),
         findAllCustomers: jest.fn(),
+        findCustomerById: jest.fn(),
+        updateCustomer: jest.fn(),
       };
 
       const module: TestingModule = await Test.createTestingModule({
-        controllers: [CustomerController, PolicyController, ClaimsController, AdminCustomerController],
+        controllers: [
+          CustomerController,
+          PolicyController,
+          ClaimsController,
+          AdminCustomerController,
+        ],
         providers: [
           {
             provide: CustomerService,
@@ -1281,7 +1215,9 @@ describe('CustomerController', () => {
     it('should accept location query param and pass to service', async () => {
       customerService.findAllCustomers.mockResolvedValue([mockCustomers[1]]);
 
-      const result = await adminController.listCustomers({ location: CustomerLocation.EAST_MALAYSIA });
+      const result = await adminController.listCustomers({
+        location: CustomerLocation.EAST_MALAYSIA,
+      });
 
       expect(customerService.findAllCustomers).toHaveBeenCalledWith({
         location: CustomerLocation.EAST_MALAYSIA,
@@ -1335,7 +1271,7 @@ describe('CustomerController', () => {
 
       expect(allGuards.length).toBeGreaterThan(0);
       const hasJwtGuard = allGuards.some(
-        (g: any) => g === JwtAuthGuard || (g instanceof JwtAuthGuard),
+        (g: any) => g === JwtAuthGuard || g instanceof JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
     });
@@ -1353,9 +1289,7 @@ describe('CustomerController', () => {
       const allGuards = [...(classGuards || []), ...(methodGuards || [])];
 
       expect(allGuards.length).toBeGreaterThan(0);
-      const hasRolesGuard = allGuards.some(
-        (g: any) => g === RolesGuard || (g instanceof RolesGuard),
-      );
+      const hasRolesGuard = allGuards.some((g: any) => g === RolesGuard || g instanceof RolesGuard);
       expect(hasRolesGuard).toBe(true);
     });
 
@@ -1395,7 +1329,7 @@ describe('CustomerController', () => {
       lastName: 'Doe',
       photoUrl: null,
       location: CustomerLocation.WEST_MALAYSIA,
-      premiumPaid: 1500.50,
+      premiumPaid: 1500.5,
       role: CustomerRole.CUSTOMER,
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-06-15'),
@@ -1422,7 +1356,12 @@ describe('CustomerController', () => {
       };
 
       const module: TestingModule = await Test.createTestingModule({
-        controllers: [CustomerController, PolicyController, ClaimsController, AdminCustomerController],
+        controllers: [
+          CustomerController,
+          PolicyController,
+          ClaimsController,
+          AdminCustomerController,
+        ],
         providers: [
           {
             provide: CustomerService,
@@ -1473,16 +1412,13 @@ describe('CustomerController', () => {
       lastName: 'Doe',
       photoUrl: null,
       location: CustomerLocation.WEST_MALAYSIA,
-      premiumPaid: 1500.50,
+      premiumPaid: 1500.5,
       role: CustomerRole.CUSTOMER,
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-06-15'),
       policies: [],
       claims: [],
     };
-
-    const mockCustomerResponse: CustomerResponseDto =
-      CustomerResponseDto.fromEntity(mockCustomer);
 
     beforeEach(async () => {
       const mockService = {
@@ -1501,7 +1437,12 @@ describe('CustomerController', () => {
       };
 
       const module: TestingModule = await Test.createTestingModule({
-        controllers: [CustomerController, PolicyController, ClaimsController, AdminCustomerController],
+        controllers: [
+          CustomerController,
+          PolicyController,
+          ClaimsController,
+          AdminCustomerController,
+        ],
         providers: [
           {
             provide: CustomerService,
@@ -1532,9 +1473,7 @@ describe('CustomerController', () => {
     });
 
     it('should return 404 when customer not found', async () => {
-      customerService.updateCustomer.mockRejectedValue(
-        new NotFoundException('Customer not found'),
-      );
+      customerService.updateCustomer.mockRejectedValue(new NotFoundException('Customer not found'));
 
       await expect(
         adminController.updateCustomer('nonexistent', { firstName: 'Updated' }),
@@ -1562,9 +1501,7 @@ describe('CustomerController', () => {
       expect(metadata).toBeDefined();
       expect(Array.isArray(metadata)).toBe(true);
 
-      const hasIdParam = metadata!.some(
-        (param: any) => param.name === 'id' || param.in === 'path',
-      );
+      const hasIdParam = metadata!.some((param: any) => param.name === 'id' || param.in === 'path');
       expect(hasIdParam).toBe(true);
     });
   });

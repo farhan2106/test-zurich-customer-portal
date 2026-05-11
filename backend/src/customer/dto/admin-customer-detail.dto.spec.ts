@@ -12,7 +12,7 @@ describe('AdminCustomerDetailDto', () => {
     lastName: 'Doe',
     photoUrl: 'https://example.com/photo.jpg',
     location: CustomerLocation.WEST_MALAYSIA,
-    premiumPaid: 1500.50,
+    premiumPaid: 1500.5,
     role: CustomerRole.CUSTOMER,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-06-15'),
@@ -67,7 +67,7 @@ describe('AdminCustomerDetailDto', () => {
       expect(dto.lastName).toBe('Doe');
       expect(dto.photoUrl).toBe('https://example.com/photo.jpg');
       expect(dto.location).toBe(CustomerLocation.WEST_MALAYSIA);
-      expect(dto.premiumPaid).toBe(1500.50);
+      expect(dto.premiumPaid).toBe(1500.5);
       expect(dto.role).toBe(CustomerRole.CUSTOMER);
       expect(dto.createdAt).toEqual(new Date('2025-01-01'));
       expect(dto.updatedAt).toEqual(new Date('2025-06-15'));
@@ -143,7 +143,7 @@ describe('AdminCustomerDetailDto', () => {
         lastName: 'Doe',
         photoUrl: 'https://example.com/photo.jpg',
         location: CustomerLocation.WEST_MALAYSIA,
-        premiumPaid: 1500.50,
+        premiumPaid: 1500.5,
         role: CustomerRole.CUSTOMER,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-06-15'),

@@ -2,7 +2,7 @@ import { ClaimResponseDto } from './claim-response.dto';
 import { Claim } from '../../entities/claim.entity';
 import { Policy } from '../../entities/policy.entity';
 import { Customer } from '../../entities/customer.entity';
-import { ClaimType, ClaimStatus, PolicyStatus, CustomerLocation } from '../../entities/enums';
+import { ClaimType, ClaimStatus } from '../../entities/enums';
 
 describe('ClaimResponseDto', () => {
   const createMockClaim = (overrides: Partial<Claim> = {}): Claim => ({
@@ -53,7 +53,7 @@ describe('ClaimResponseDto', () => {
 
     it('should have null/undefined policyNumber when policy not loaded', () => {
       const claim = createMockClaim({
-        policy: undefined as any,
+        policy: undefined,
       });
 
       const dto = ClaimResponseDto.fromEntity(claim);

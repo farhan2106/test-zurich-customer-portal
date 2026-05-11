@@ -31,9 +31,7 @@ export function createTestDataSource(entities: any[]): DataSource {
  * Attempts to initialize a DataSource and provides a clear error message
  * if the database is not running.
  */
-export async function initializeTestDataSource(
-  dataSource: DataSource,
-): Promise<DataSource> {
+export async function initializeTestDataSource(dataSource: DataSource): Promise<DataSource> {
   try {
     await dataSource.initialize();
     return dataSource;

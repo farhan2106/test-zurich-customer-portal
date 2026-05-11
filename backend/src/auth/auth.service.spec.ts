@@ -163,7 +163,7 @@ describe('AuthService', () => {
     });
 
     it('should include iat and exp claims with exp approximately now + 24h', () => {
-      jwtService.sign.mockImplementation((payload, options) => {
+      jwtService.sign.mockImplementation((_payload, _options) => {
         const now = Math.floor(Date.now() / 1000);
         return `token_with_iat_${now}_exp_${now + 86400}`;
       });

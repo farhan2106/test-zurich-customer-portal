@@ -11,7 +11,7 @@ describe('RolesGuard', () => {
       getAllAndOverride: jest.fn(),
     } as unknown as jest.Mocked<Reflector>;
 
-    guard = new RolesGuard(reflector as unknown as Reflector);
+    guard = new RolesGuard(reflector);
   });
 
   const createMockContext = (user: Record<string, unknown> = {}): ExecutionContext =>
@@ -40,9 +40,7 @@ describe('RolesGuard', () => {
       const context = createMockContext({ role: 'customer' });
 
       expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(context)).toThrow(
-        'Access denied: insufficient permissions',
-      );
+      expect(() => guard.canActivate(context)).toThrow('Access denied: insufficient permissions');
     });
 
     it('should return 403 (not 401) when role check fails', () => {
@@ -89,10 +87,10 @@ describe('RolesGuard', () => {
       const result = guard.canActivate(context);
 
       expect(result).toBe(true);
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
-        expect.anything(),
-        [expect.any(Function), expect.any(Function)],
-      );
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(expect.anything(), [
+        expect.any(Function),
+        expect.any(Function),
+      ]);
     });
 
     it('should return 403 if user.role is undefined', () => {
@@ -101,9 +99,7 @@ describe('RolesGuard', () => {
       const context = createMockContext({});
 
       expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(context)).toThrow(
-        'Access denied: no role assigned',
-      );
+      expect(() => guard.canActivate(context)).toThrow('Access denied: no role assigned');
     });
 
     it('should return 403 if user.role is null', () => {
@@ -112,9 +108,7 @@ describe('RolesGuard', () => {
       const context = createMockContext({ role: null });
 
       expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(context)).toThrow(
-        'Access denied: no role assigned',
-      );
+      expect(() => guard.canActivate(context)).toThrow('Access denied: no role assigned');
     });
 
     it('should work with multiple roles: user with superadmin role allowed when @Roles("admin", "superadmin")', () => {
@@ -151,9 +145,7 @@ describe('RolesGuard', () => {
       const context = createMockContext();
 
       expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-      expect(() => guard.canActivate(context)).toThrow(
-        'Access denied: no role assigned',
-      );
+      expect(() => guard.canActivate(context)).toThrow('Access denied: no role assigned');
     });
   });
 });

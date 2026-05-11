@@ -30,7 +30,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = resp.message || exception.message;
         errorDetails = resp;
       } else {
-        message = exceptionResponse as string;
+        message = exceptionResponse;
       }
     }
 

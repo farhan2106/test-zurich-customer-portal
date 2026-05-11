@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthGuard } from '@nestjs/passport';
-import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService, GoogleProfile } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -106,9 +105,7 @@ describe('AuthController', () => {
           maxAge: expect.any(Number),
         }),
       );
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback',
-      );
+      expect(mockRes.redirect).toHaveBeenCalledWith('http://localhost:3000/auth/callback');
     });
 
     it('should create new user if not exists (first login)', async () => {
@@ -143,9 +140,7 @@ describe('AuthController', () => {
           maxAge: expect.any(Number),
         }),
       );
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback',
-      );
+      expect(mockRes.redirect).toHaveBeenCalledWith('http://localhost:3000/auth/callback');
     });
 
     it('should return existing user if already registered', async () => {
@@ -172,9 +167,7 @@ describe('AuthController', () => {
           maxAge: expect.any(Number),
         }),
       );
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback',
-      );
+      expect(mockRes.redirect).toHaveBeenCalledWith('http://localhost:3000/auth/callback');
     });
 
     it('should set HTTP-only cookie and redirect without token in URL', async () => {
@@ -191,9 +184,7 @@ describe('AuthController', () => {
       await controller.googleCallback(mockReq, mockRes);
 
       expect(mockRes.cookie).toHaveBeenCalled();
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback',
-      );
+      expect(mockRes.redirect).toHaveBeenCalledWith('http://localhost:3000/auth/callback');
       const redirectUrl = (mockRes.redirect as jest.Mock).mock.calls[0][0];
       expect(redirectUrl).not.toContain('token=');
     });
@@ -225,13 +216,13 @@ describe('AuthController', () => {
   });
 
   describe('POST /api/auth/logout', () => {
-    it('should clear the token cookie and return success message', async () => {
+    it('should clear the token cookie and return success message', () => {
       const mockRes = {
         clearCookie: jest.fn(),
         json: jest.fn(),
       } as unknown as Response;
 
-      await controller.logout(mockRes);
+      controller.logout(mockRes);
 
       expect(mockRes.clearCookie).toHaveBeenCalledWith('token');
       expect(mockRes.json).toHaveBeenCalledWith({
@@ -282,9 +273,7 @@ describe('AuthController', () => {
       expect(guards).toBeDefined();
       expect(guards!.length).toBeGreaterThan(0);
 
-      const hasJwtGuard = guards!.some(
-        (g: any) => g instanceof JwtAuthGuard || g === JwtAuthGuard,
-      );
+      const hasJwtGuard = guards!.some((g: any) => g instanceof JwtAuthGuard || g === JwtAuthGuard);
       expect(hasJwtGuard).toBe(true);
     });
   });

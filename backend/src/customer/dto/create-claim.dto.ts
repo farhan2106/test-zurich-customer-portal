@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsUUID, IsEnum, IsString, MinLength, MaxLength, IsOptional, IsISO8601 } from 'class-validator';
+import {
+  IsUUID,
+  IsEnum,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsOptional,
+  IsISO8601,
+} from 'class-validator';
 import { ClaimType } from '../../entities/enums';
 import { IsNotFutureDate } from '../../common/validators/is-not-future-date.validator';
 
@@ -12,7 +20,12 @@ export class CreateClaimDto {
   @IsEnum(ClaimType)
   type: ClaimType;
 
-  @ApiProperty({ description: 'Claim description', example: 'Car accident on highway', minLength: 10, maxLength: 2000 })
+  @ApiProperty({
+    description: 'Claim description',
+    example: 'Car accident on highway',
+    minLength: 10,
+    maxLength: 2000,
+  })
   @IsString()
   @MinLength(10)
   @MaxLength(2000)
@@ -23,7 +36,11 @@ export class CreateClaimDto {
   @IsNotFutureDate()
   incidentDate: string;
 
-  @ApiPropertyOptional({ description: 'Location of incident', example: 'Kuala Lumpur', maxLength: 500 })
+  @ApiPropertyOptional({
+    description: 'Location of incident',
+    example: 'Kuala Lumpur',
+    maxLength: 500,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(500)

@@ -10,7 +10,7 @@ describe('CustomerResponseDto', () => {
     lastName: 'Doe',
     photoUrl: 'https://example.com/photo.jpg',
     location: CustomerLocation.WEST_MALAYSIA,
-    premiumPaid: 1500.50,
+    premiumPaid: 1500.5,
     role: CustomerRole.CUSTOMER,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-06-15'),
@@ -61,7 +61,7 @@ describe('CustomerResponseDto', () => {
 
     it('should map premiumPaid from entity', () => {
       const dto = CustomerResponseDto.fromEntity(mockCustomer);
-      expect(dto.premiumPaid).toBe(1500.50);
+      expect(dto.premiumPaid).toBe(1500.5);
     });
 
     it('should handle zero premiumPaid', () => {
@@ -99,7 +99,7 @@ describe('CustomerResponseDto', () => {
         lastName: 'Doe',
         photoUrl: 'https://example.com/photo.jpg',
         location: CustomerLocation.WEST_MALAYSIA,
-        premiumPaid: 1500.50,
+        premiumPaid: 1500.5,
         role: CustomerRole.CUSTOMER,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-06-15'),

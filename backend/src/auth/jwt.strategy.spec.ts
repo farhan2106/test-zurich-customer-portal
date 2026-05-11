@@ -1,5 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { JwtStrategy, JwtPayload, JwtUser } from './jwt.strategy';
+import { JwtStrategy, JwtPayload } from './jwt.strategy';
 import { ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 
@@ -72,7 +72,7 @@ describe('JwtStrategy', () => {
       expect(result.email).toBe('admin@zurich.com');
     });
 
-    it('should throw UnauthorizedException if payload missing sub', async () => {
+    it('should throw UnauthorizedException if payload missing sub', () => {
       const payload = {
         email: 'test@gmail.com',
         firstName: 'Test',
@@ -83,12 +83,10 @@ describe('JwtStrategy', () => {
         exp: 1700086400,
       } as JwtPayload;
 
-      await expect(strategy.validate(payload)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      expect(() => strategy.validate(payload)).toThrow(UnauthorizedException);
     });
 
-    it('should throw UnauthorizedException if payload missing email', async () => {
+    it('should throw UnauthorizedException if payload missing email', () => {
       const payload = {
         sub: 'usr_abc123',
         firstName: 'Test',
@@ -99,9 +97,7 @@ describe('JwtStrategy', () => {
         exp: 1700086400,
       } as JwtPayload;
 
-      await expect(strategy.validate(payload)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      expect(() => strategy.validate(payload)).toThrow(UnauthorizedException);
     });
 
     it('should handle null photoUrl in payload', async () => {

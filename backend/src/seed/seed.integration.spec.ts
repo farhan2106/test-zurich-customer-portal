@@ -1,18 +1,10 @@
 import { DataSource, Repository } from 'typeorm';
-import {
-  createTestDataSource,
-  initializeTestDataSource,
-} from '../config/test-db.config';
+import { createTestDataSource, initializeTestDataSource } from '../config/test-db.config';
 import { Customer } from '../entities/customer.entity';
 import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
 import { Claim } from '../entities/claim.entity';
-import {
-  CustomerLocation,
-  CustomerRole,
-  ProductStatus,
-  PolicyStatus,
-} from '../entities/enums';
+import { CustomerLocation, CustomerRole, ProductStatus, PolicyStatus } from '../entities/enums';
 
 describe('Database Seeder', () => {
   let dataSource: DataSource;
@@ -288,7 +280,7 @@ describe('Database Seeder', () => {
       await runSeed();
       const autoProduct = await productRepo.findOneBy({ productCode: 4000 });
       expect(autoProduct!.coverageDetails).not.toBeNull();
-      const coverage = JSON.parse(autoProduct!.coverageDetails!);
+      const coverage = JSON.parse(autoProduct!.coverageDetails);
       expect(coverage.accidentDamage).toBe('Up to RM 100,000');
     });
   });
@@ -364,18 +356,14 @@ describe('Database Seeder', () => {
       const georgeBluth = await customerRepo.findOneBy({
         email: 'george.bluth@yahoo.com.my',
       });
-      const georgeBluthPolicy = policies.find(
-        (p) => p.customerId === georgeBluth?.id,
-      );
+      const georgeBluthPolicy = policies.find((p) => p.customerId === georgeBluth?.id);
       expect(georgeBluthPolicy).toBeDefined();
       expect(georgeBluthPolicy!.product.productCode).toBe(4000);
 
       const janetWeaver = await customerRepo.findOneBy({
         email: 'janet.weaver@gmail.com',
       });
-      const janetWeaverPolicy = policies.find(
-        (p) => p.customerId === janetWeaver?.id,
-      );
+      const janetWeaverPolicy = policies.find((p) => p.customerId === janetWeaver?.id);
       expect(janetWeaverPolicy).toBeDefined();
       expect(janetWeaverPolicy!.product.productCode).toBe(5000);
     });
@@ -397,16 +385,12 @@ describe('Database Seeder', () => {
       const toleranceMs = 5000; // 5 second tolerance
 
       policies.forEach((policy) => {
-        const startDateDiff = Math.abs(
-          policy.startDate.getTime() - now.getTime(),
-        );
+        const startDateDiff = Math.abs(policy.startDate.getTime() - now.getTime());
         expect(startDateDiff).toBeLessThan(toleranceMs);
 
         const expectedEndDate = new Date(now);
         expectedEndDate.setFullYear(expectedEndDate.getFullYear() + 1);
-        const endDateDiff = Math.abs(
-          policy.endDate.getTime() - expectedEndDate.getTime(),
-        );
+        const endDateDiff = Math.abs(policy.endDate.getTime() - expectedEndDate.getTime());
         expect(endDateDiff).toBeLessThan(toleranceMs);
       });
     });

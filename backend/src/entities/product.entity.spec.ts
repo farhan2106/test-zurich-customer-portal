@@ -23,9 +23,7 @@ describe('Product Entity', () => {
       const product = new Product();
       product.id = '550e8400-e29b-41d4-a716-446655440000';
       expect(typeof product.id).toBe('string');
-      expect(product.id).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-      );
+      expect(product.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     });
 
     it('should accept integer productCode', () => {
@@ -59,7 +57,7 @@ describe('Product Entity', () => {
   describe('basePremium decimal', () => {
     it('should accept decimal values with 2 decimal places', () => {
       const product = new Product();
-      product.basePremium = 500.50;
+      product.basePremium = 500.5;
       expect(product.basePremium).toBe(500.5);
     });
 

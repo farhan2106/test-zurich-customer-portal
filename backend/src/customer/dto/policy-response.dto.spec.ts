@@ -3,7 +3,13 @@ import { Policy } from '../../entities/policy.entity';
 import { Product } from '../../entities/product.entity';
 import { Claim } from '../../entities/claim.entity';
 import { Customer } from '../../entities/customer.entity';
-import { PolicyStatus, CustomerLocation, ProductStatus, ClaimType, ClaimStatus } from '../../entities/enums';
+import {
+  PolicyStatus,
+  CustomerLocation,
+  ProductStatus,
+  ClaimType,
+  ClaimStatus,
+} from '../../entities/enums';
 
 describe('PolicyResponseDto', () => {
   const mockProduct: Product = {

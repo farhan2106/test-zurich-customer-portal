@@ -1,13 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { CustomerService } from './customer.service';
 import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
 import { Customer } from '../entities/customer.entity';
 import { Claim } from '../entities/claim.entity';
-import { ProductStatus, PolicyStatus, CustomerLocation, CustomerRole, ClaimType, ClaimStatus } from '../entities/enums';
+import {
+  ProductStatus,
+  PolicyStatus,
+  CustomerLocation,
+  CustomerRole,
+  ClaimType,
+  ClaimStatus,
+} from '../entities/enums';
 
 describe('CustomerService', () => {
   let service: CustomerService;
@@ -137,9 +149,7 @@ describe('CustomerService', () => {
     it('should throw NotFoundException when product is not found', async () => {
       productRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findProductById('nonexistent_id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findProductById('nonexistent_id')).rejects.toThrow(NotFoundException);
 
       expect(productRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'nonexistent_id' },
@@ -149,9 +159,7 @@ describe('CustomerService', () => {
     it('should throw NotFoundException when product is inactive', async () => {
       productRepository.findOne.mockResolvedValue(mockInactiveProduct);
 
-      await expect(service.findProductById('prod_inactive')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findProductById('prod_inactive')).rejects.toThrow(NotFoundException);
 
       expect(productRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'prod_inactive' },
@@ -275,7 +283,7 @@ describe('CustomerService', () => {
         customer: mockCustomer,
         product: mockProduct,
         claims: [],
-      } as Policy);
+      });
 
       const result = await serviceWithPolicy.purchasePolicy('usr_abc123', 'prod_abc123');
 
@@ -316,7 +324,7 @@ describe('CustomerService', () => {
         customer: mockCustomer,
         product: mockProduct,
         claims: [],
-      } as Policy);
+      });
 
       await serviceWithPolicy.purchasePolicy('usr_abc123', 'prod_abc123');
 
@@ -354,7 +362,7 @@ describe('CustomerService', () => {
         customer: mockCustomer,
         product: mockProduct,
         claims: [],
-      } as Policy);
+      });
 
       await serviceWithPolicy.purchasePolicy('usr_abc123', 'prod_abc123');
 
@@ -379,9 +387,9 @@ describe('CustomerService', () => {
     it('should throw BadRequestException when product is inactive', async () => {
       productRepo.findOne.mockResolvedValue(mockInactiveProduct);
 
-      await expect(
-        serviceWithPolicy.purchasePolicy('usr_abc123', 'prod_inactive'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(serviceWithPolicy.purchasePolicy('usr_abc123', 'prod_inactive')).rejects.toThrow(
+        BadRequestException,
+      );
 
       expect(productRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'prod_inactive' },
@@ -410,9 +418,9 @@ describe('CustomerService', () => {
       customerRepo.findOne.mockResolvedValue(mockCustomer);
       policyRepo.findOne.mockResolvedValue(existingPolicy);
 
-      await expect(
-        serviceWithPolicy.purchasePolicy('usr_abc123', 'prod_abc123'),
-      ).rejects.toThrow(ConflictException);
+      await expect(serviceWithPolicy.purchasePolicy('usr_abc123', 'prod_abc123')).rejects.toThrow(
+        ConflictException,
+      );
 
       expect(policyRepo.findOne).toHaveBeenCalledWith({
         where: {
@@ -448,7 +456,7 @@ describe('CustomerService', () => {
         customer: eastMalaysiaCustomer,
         product: mockProduct,
         claims: [],
-      } as Policy);
+      });
 
       await serviceWithPolicy.purchasePolicy('usr_abc123', 'prod_abc123');
 
@@ -481,7 +489,7 @@ describe('CustomerService', () => {
         customer: mockCustomer,
         product: expensiveProduct,
         claims: [],
-      } as Policy);
+      });
 
       await serviceWithPolicy.purchasePolicy('usr_abc123', 'prod_abc123');
 
@@ -545,15 +553,24 @@ describe('CustomerService', () => {
     });
 
     it('should return policies for given customerId with product relation', async () => {
-      const mockPolicies: Policy[] = [{
-        id: 'pol_001', policyNumber: 'POL-20260101-0001',
-        customerId: 'usr_abc123', productId: 'prod_abc123',
-        status: PolicyStatus.ACTIVE,
-        startDate: new Date(), endDate: new Date(),
-        premiumAmount: 500, location: CustomerLocation.WEST_MALAYSIA,
-        createdAt: new Date(), updatedAt: new Date(),
-        customer: {} as Customer, product: mockProduct, claims: [],
-      }];
+      const mockPolicies: Policy[] = [
+        {
+          id: 'pol_001',
+          policyNumber: 'POL-20260101-0001',
+          customerId: 'usr_abc123',
+          productId: 'prod_abc123',
+          status: PolicyStatus.ACTIVE,
+          startDate: new Date(),
+          endDate: new Date(),
+          premiumAmount: 500,
+          location: CustomerLocation.WEST_MALAYSIA,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          customer: {} as Customer,
+          product: mockProduct,
+          claims: [],
+        },
+      ];
 
       (policyRepository.find as jest.Mock).mockResolvedValue(mockPolicies);
 
@@ -871,9 +888,7 @@ describe('CustomerService', () => {
 
   describe('submitClaim()', () => {
     let serviceWithClaim: CustomerService;
-    let productRepo: jest.Mocked<Repository<Product>>;
     let policyRepo: jest.Mocked<Repository<Policy>>;
-    let customerRepo: jest.Mocked<Repository<Customer>>;
     let claimRepo: jest.Mocked<Repository<Claim>>;
 
     const mockCustomer: Customer = {
@@ -968,9 +983,7 @@ describe('CustomerService', () => {
       }).compile();
 
       serviceWithClaim = module.get<CustomerService>(CustomerService);
-      productRepo = module.get(getRepositoryToken(Product));
       policyRepo = module.get(getRepositoryToken(Policy));
-      customerRepo = module.get(getRepositoryToken(Customer));
       claimRepo = module.get(getRepositoryToken(Claim));
     });
 
@@ -995,7 +1008,7 @@ describe('CustomerService', () => {
         updatedAt: now,
         policy: mockPolicy,
         customer: mockCustomer,
-      } as Claim);
+      });
 
       const result = await serviceWithClaim.submitClaim('usr_abc123', mockClaimDto);
 
@@ -1021,27 +1034,27 @@ describe('CustomerService', () => {
     it('should throw NotFoundException if policy not found', async () => {
       policyRepo.findOne.mockResolvedValue(null);
 
-      await expect(
-        serviceWithClaim.submitClaim('usr_abc123', mockClaimDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(serviceWithClaim.submitClaim('usr_abc123', mockClaimDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException if policy status is not active', async () => {
       const expiredPolicy = { ...mockPolicy, status: PolicyStatus.EXPIRED };
       policyRepo.findOne.mockResolvedValue(expiredPolicy);
 
-      await expect(
-        serviceWithClaim.submitClaim('usr_abc123', mockClaimDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(serviceWithClaim.submitClaim('usr_abc123', mockClaimDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw ForbiddenException if policy belongs to different customer', async () => {
       const otherCustomerPolicy = { ...mockPolicy, customerId: 'usr_different' };
       policyRepo.findOne.mockResolvedValue(otherCustomerPolicy);
 
-      await expect(
-        serviceWithClaim.submitClaim('usr_abc123', mockClaimDto),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(serviceWithClaim.submitClaim('usr_abc123', mockClaimDto)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should generate unique claimNumber per call', async () => {
@@ -1266,7 +1279,7 @@ describe('CustomerService', () => {
         lastName: 'Doe',
         photoUrl: null,
         location: CustomerLocation.WEST_MALAYSIA,
-        premiumPaid: 1500.50,
+        premiumPaid: 1500.5,
         role: CustomerRole.CUSTOMER,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-06-15'),
@@ -1371,9 +1384,7 @@ describe('CustomerService', () => {
       const result = await service.findAllCustomers({ search: 'John' });
 
       expect(customerRepo.find).toHaveBeenCalledWith({
-        where: expect.arrayContaining([
-          expect.objectContaining({ firstName: expect.any(Object) }),
-        ]),
+        where: expect.arrayContaining([expect.objectContaining({ firstName: expect.any(Object) })]),
       });
       expect(result).toHaveLength(1);
       expect(result[0].firstName).toBe('John');
@@ -1385,9 +1396,7 @@ describe('CustomerService', () => {
       const result = await service.findAllCustomers({ search: 'Smith' });
 
       expect(customerRepo.find).toHaveBeenCalledWith({
-        where: expect.arrayContaining([
-          expect.objectContaining({ lastName: expect.any(Object) }),
-        ]),
+        where: expect.arrayContaining([expect.objectContaining({ lastName: expect.any(Object) })]),
       });
       expect(result).toHaveLength(1);
       expect(result[0].lastName).toBe('Smith');
@@ -1399,9 +1408,7 @@ describe('CustomerService', () => {
       const result = await service.findAllCustomers({ search: 'john@example.com' });
 
       expect(customerRepo.find).toHaveBeenCalledWith({
-        where: expect.arrayContaining([
-          expect.objectContaining({ email: expect.any(Object) }),
-        ]),
+        where: expect.arrayContaining([expect.objectContaining({ email: expect.any(Object) })]),
       });
       expect(result).toHaveLength(1);
       expect(result[0].email).toBe('john@example.com');
@@ -1454,7 +1461,7 @@ describe('CustomerService', () => {
       lastName: 'Doe',
       photoUrl: null,
       location: CustomerLocation.WEST_MALAYSIA,
-      premiumPaid: 1500.50,
+      premiumPaid: 1500.5,
       role: CustomerRole.CUSTOMER,
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-06-15'),
@@ -1528,9 +1535,7 @@ describe('CustomerService', () => {
     it('should throw NotFoundException when customer not found', async () => {
       customerRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.findCustomerById('nonexistent_id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findCustomerById('nonexistent_id')).rejects.toThrow(NotFoundException);
 
       expect(customerRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'nonexistent_id' },
@@ -1549,7 +1554,7 @@ describe('CustomerService', () => {
       lastName: 'Doe',
       photoUrl: null,
       location: CustomerLocation.WEST_MALAYSIA,
-      premiumPaid: 1500.50,
+      premiumPaid: 1500.5,
       role: CustomerRole.CUSTOMER,
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-06-15'),
@@ -1825,9 +1830,9 @@ describe('CustomerService', () => {
     it('should throw NotFoundException when claim not found', async () => {
       claimRepo.findOne.mockResolvedValue(null);
 
-      await expect(
-        serviceWithClaim.findClaimById('nonexistent', 'usr_abc123'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(serviceWithClaim.findClaimById('nonexistent', 'usr_abc123')).rejects.toThrow(
+        NotFoundException,
+      );
 
       expect(claimRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'nonexistent' },
@@ -1838,9 +1843,9 @@ describe('CustomerService', () => {
     it('should throw ForbiddenException when claim belongs to different customer', async () => {
       claimRepo.findOne.mockResolvedValue(mockClaim);
 
-      await expect(
-        serviceWithClaim.findClaimById('clm_abc123', 'usr_different'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(serviceWithClaim.findClaimById('clm_abc123', 'usr_different')).rejects.toThrow(
+        ForbiddenException,
+      );
 
       expect(claimRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'clm_abc123' },

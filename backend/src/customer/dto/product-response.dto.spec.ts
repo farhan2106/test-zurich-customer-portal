@@ -104,13 +104,8 @@ describe('ProductResponseDto', () => {
 
   describe('decorators', () => {
     it('should have @Expose() decorator on the class', () => {
-      const metadata = Reflect.getMetadata('design:paramtypes', ProductResponseDto);
       // @Expose() from class-transformer sets __design__ metadata
       // We verify the class is transformable by checking it has the Expose metadata
-      const exposeMetadata = Reflect.getMetadata(
-        'class-transformer:design',
-        ProductResponseDto,
-      );
       // The class should be set up for transformation
       expect(ProductResponseDto).toBeDefined();
     });

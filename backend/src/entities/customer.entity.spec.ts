@@ -1,6 +1,4 @@
 import { Customer } from './customer.entity';
-import { Policy } from './policy.entity';
-import { Claim } from './claim.entity';
 import { CustomerLocation, CustomerRole } from './enums';
 
 describe('Customer Entity', () => {

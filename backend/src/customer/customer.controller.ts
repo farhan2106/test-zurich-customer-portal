@@ -1,14 +1,21 @@
 import { Controller, Get, Post, Patch, Param, Body, UseGuards, Req, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { CustomerService } from './customer.service';
 import { ProductResponseDto } from './dto/product-response.dto';
 import { CreatePolicyDto } from './dto/create-policy.dto';
 import { PolicyResponseDto } from './dto/policy-response.dto';
 import { CreateClaimDto } from './dto/create-claim.dto';
 import { ClaimResponseDto } from './dto/claim-response.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CustomerResponseDto } from './dto/customer-response.dto';
 import { AdminCustomerDetailDto } from './dto/admin-customer-detail.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -18,8 +25,8 @@ import { JwtUser } from '../auth/jwt.strategy';
 
 @ApiTags('Products')
 @Controller('api/products')
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
@@ -44,8 +51,8 @@ export class CustomerController {
 
 @ApiTags('Policies')
 @Controller('api/policies')
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class PolicyController {
   constructor(private readonly customerService: CustomerService) {}
 
@@ -97,8 +104,8 @@ export class PolicyController {
 
 @ApiTags('Claims')
 @Controller('api/claims')
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class ClaimsController {
   constructor(private readonly customerService: CustomerService) {}
 
@@ -146,13 +153,24 @@ export class AdminCustomerController {
   @Get()
   @Roles('admin')
   @ApiOperation({ summary: 'List all customers (admin)' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by firstName, lastName, or email' })
-  @ApiQuery({ name: 'location', required: false, description: 'Filter by location', enum: CustomerLocation })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search by firstName, lastName, or email',
+  })
+  @ApiQuery({
+    name: 'location',
+    required: false,
+    description: 'Filter by location',
+    enum: CustomerLocation,
+  })
   @ApiResponse({ status: 200, description: 'List of customers', type: [CustomerResponseDto] })
   @ApiResponse({ status: 403, description: 'Forbidden - requires admin role' })
-  async listCustomers(@Query() filters: { search?: string; location?: string }): Promise<CustomerResponseDto[]> {
+  async listCustomers(
+    @Query() filters: { search?: string; location?: string },
+  ): Promise<CustomerResponseDto[]> {
     const customers = await this.customerService.findAllCustomers(filters);
-    return customers.map(c => CustomerResponseDto.fromEntity(c));
+    return customers.map((c) => CustomerResponseDto.fromEntity(c));
   }
 
   @Get(':id')

@@ -45,7 +45,7 @@ describe('UpdateCustomerDto', () => {
 
     it('should accept valid number for premiumPaid', async () => {
       const dto = plainToInstance(UpdateCustomerDto, {
-        premiumPaid: 1500.50,
+        premiumPaid: 1500.5,
       });
       const errors = await validate(dto);
       expect(errors.length).toBe(0);
@@ -93,7 +93,7 @@ describe('UpdateCustomerDto', () => {
         lastName: 'Smith',
         photoUrl: 'https://example.com/new-photo.jpg',
         location: 'East Malaysia',
-        premiumPaid: 2500.00,
+        premiumPaid: 2500.0,
       });
       const errors = await validate(dto);
       expect(errors.length).toBe(0);

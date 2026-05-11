@@ -20,16 +20,23 @@ export class ProductResponseDto {
   @Expose()
   description: string;
 
-  @ApiProperty({ description: 'Coverage details as key-value pairs', example: { liability: 'Up to $1M', collision: 'Included' } })
+  @ApiProperty({
+    description: 'Coverage details as key-value pairs',
+    example: { liability: 'Up to $1M', collision: 'Included' },
+  })
   @Expose()
   @Type(() => Object)
   coverageDetails: Record<string, string>;
 
-  @ApiProperty({ description: 'Base premium in MYR', example: 500.00 })
+  @ApiProperty({ description: 'Base premium in MYR', example: 500.0 })
   @Expose()
   basePremium: number;
 
-  @ApiProperty({ description: 'Product status', enum: ProductStatus, example: ProductStatus.ACTIVE })
+  @ApiProperty({
+    description: 'Product status',
+    enum: ProductStatus,
+    example: ProductStatus.ACTIVE,
+  })
   @Expose()
   status: ProductStatus;
 

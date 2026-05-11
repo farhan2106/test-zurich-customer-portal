@@ -28,38 +28,28 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should throw UnauthorizedException when user is null', () => {
-      expect(() => guard.handleRequest(null, null, null)).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => guard.handleRequest(null, null, null)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when user is undefined', () => {
-      expect(() => guard.handleRequest(null, undefined, null)).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => guard.handleRequest(null, undefined, null)).toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when user is false', () => {
-      expect(() => guard.handleRequest(null, false, null)).toThrow(
-        UnauthorizedException,
-      );
+      expect(() => guard.handleRequest(null, false, null)).toThrow(UnauthorizedException);
     });
 
     it('should throw original error if error parameter is present', () => {
       const customError = new Error('Custom auth error');
 
-      expect(() => guard.handleRequest(customError, null, null)).toThrow(
-        customError,
-      );
+      expect(() => guard.handleRequest(customError, null, null)).toThrow(customError);
     });
 
     it('should throw original error even if user is present', () => {
       const user = { sub: 'usr_123', email: 'test@gmail.com' };
       const customError = new Error('Token expired');
 
-      expect(() => guard.handleRequest(customError, user, null)).toThrow(
-        customError,
-      );
+      expect(() => guard.handleRequest(customError, user, null)).toThrow(customError);
     });
 
     it('should return user object with all properties', () => {

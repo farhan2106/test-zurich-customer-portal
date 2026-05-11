@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtUser } from './jwt.strategy';
+import { Public } from './public.decorator';
 
 @ApiTags('Auth')
 @Controller('api/auth')
@@ -12,12 +13,14 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Get('google')
+  @Public()
   @UseGuards(AuthGuard('google'))
   googleLogin(): void {
     // Passport Google guard handles the redirect automatically
   }
 
   @Get('google/callback')
+  @Public()
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
     const googleProfile = req.user as {
@@ -43,14 +46,15 @@ export class AuthController {
   }
 
   @Post('logout')
+  @Public()
   logout(@Res() res: Response): void {
     res.clearCookie('token');
     res.json({ message: 'Logged out successfully' });
   }
 
   @Get('profile')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: Request) {
     const user = req.user as JwtUser;
 
