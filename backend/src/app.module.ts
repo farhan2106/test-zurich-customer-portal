@@ -9,6 +9,7 @@ import { typeOrmDataSourceOptions } from './config/typeorm.config';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { RoleMiddleware } from './auth/role.middleware';
+import { DatabaseCheckService } from './common/services/database-check.service';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RoleMiddleware } from './auth/role.middleware';
   controllers: [AppController],
   providers: [
     AppService,
+    DatabaseCheckService,
     // Global guards — order matters: JWT auth runs before role check
     {
       provide: APP_GUARD,

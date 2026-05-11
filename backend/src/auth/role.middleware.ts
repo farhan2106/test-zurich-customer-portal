@@ -1,12 +1,13 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import { JwtUser } from './jwt.strategy';
 
 @Injectable()
 export class RoleMiddleware implements NestMiddleware {
   private readonly logger = new Logger(RoleMiddleware.name);
 
   use(req: Request, _res: Response, next: NextFunction) {
-    const user = req.user;
+    const user = req.user as JwtUser;
     const { method, originalUrl } = req;
 
     if (user) {

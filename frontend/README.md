@@ -20,6 +20,42 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Environment Variables
+
+This project uses the following environment variables. Copy `.env.sample` to `.env.local` and fill in your values.
+
+> **Note:** Only variables prefixed with `NEXT_PUBLIC_` are exposed to the browser. All other variables are only available on the server side.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | Yes | `http://localhost:3001/api` | Base URL of the backend API. Used by the API client and pages to make requests. |
+| `NODE_ENV` | No | `development` | Node environment. Controls Redux DevTools enablement among other things. |
+
+### Setup
+
+```bash
+# Copy the sample env file
+cp .env.sample .env.local
+
+# Edit .env.local with your values
+# Example:
+#   NEXT_PUBLIC_API_URL=http://localhost:3001/api
+```
+
+### `.env.sample`
+
+```env
+# Base URL of the backend API
+NEXT_PUBLIC_API_URL=<your-backend-api-url>
+```
+
+### Where Variables Are Used
+
+| Variable | File(s) |
+|----------|---------|
+| `NEXT_PUBLIC_API_URL` | `src/services/api-client.ts`, `src/app/page.tsx`, `src/app/page.test.tsx` |
+| `NODE_ENV` | `src/store/index.ts` |
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
