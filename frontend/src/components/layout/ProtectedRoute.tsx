@@ -1,6 +1,7 @@
 'use client';
 
-import { redirect } from 'next/navigation';
+import { useEffect } from 'react';
+import { redirect, useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import { Spinner } from '@/components/ui';
 import { Navbar } from '@/components/layout';
@@ -15,6 +16,18 @@ export function ProtectedRoute({
   adminRequired = false,
 }: ProtectedRouteProps) {
   const { user, isLoading } = useAppSelector((state) => state.auth);
+  const router = useRouter();
+
+  // Redirect in useEffect (not in render phase) to avoid
+  // "Rendered more hooks than during the previous render" error
+  // that occurs when redirect() throws mid-render during page transitions.
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/');
+    } else if (!isLoading && adminRequired && user?.role !== 'admin') {
+      router.push('/dashboard');
+    }
+  }, [user, isLoading, adminRequired, router]);
 
   // 1. If still loading auth state → show spinner
   if (isLoading) {
@@ -25,14 +38,14 @@ export function ProtectedRoute({
     );
   }
 
-  // 2. If no user → redirect to home (login page)
+  // 2. If no user → render nothing (useEffect will redirect)
   if (!user) {
-    redirect('/');
+    return null;
   }
 
-  // 3. If admin required but user is not admin → redirect to dashboard
+  // 3. If admin required but user is not admin → render nothing (useEffect will redirect)
   if (adminRequired && user.role !== 'admin') {
-    redirect('/dashboard');
+    return null;
   }
 
   // 4. All checks passed → render with Navbar and layout

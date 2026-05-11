@@ -47,26 +47,28 @@ describe('Navbar', () => {
 
   it('renders nav links: Dashboard, Products, Claims (visible for customer role)', () => {
     render(<Navbar />, { preloadedState: customerPreloadedState });
-    expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /products/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /claims/i })).toBeInTheDocument();
+    // Links appear in both mobile popover menu and desktop menu
+    expect(screen.getAllByRole('link', { name: /dashboard/i })).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: /products/i })).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: /claims/i })).toHaveLength(2);
   });
 
   it('renders Customers admin link when user role is admin', () => {
     render(<Navbar />, { preloadedState: adminPreloadedState });
-    expect(screen.getByRole('link', { name: /customers/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /customers/i })).toHaveLength(2);
   });
 
   it('does NOT render Customers admin link when user is customer', () => {
     render(<Navbar />, { preloadedState: customerPreloadedState });
-    expect(screen.queryByRole('link', { name: /customers/i })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('link', { name: /customers/i })).toHaveLength(0);
   });
 
   it('active link has btn-active class (mock usePathname to return that link href)', () => {
     jest.spyOn(nextNavigation, 'usePathname').mockReturnValue('/products');
     render(<Navbar />, { preloadedState: customerPreloadedState });
-    const productsLink = screen.getByRole('link', { name: /products/i });
-    expect(productsLink).toHaveClass('btn-active');
+    const productsLinks = screen.getAllByRole('link', { name: /products/i });
+    // At least one link (mobile or desktop) should have btn-active
+    expect(productsLinks.some((link) => link.classList.contains('btn-active'))).toBe(true);
     jest.restoreAllMocks();
   });
 
@@ -112,12 +114,17 @@ describe('Navbar', () => {
     dispatchSpy.mockRestore();
   });
 
-  it('mobile hamburger with aria-label="Open menu" exists with lg:hidden classes', () => {
+  it('mobile hamburger uses Popover API with mobile-menu target and hidden on desktop', () => {
     render(<Navbar />, { preloadedState: customerPreloadedState });
     const hamburger = screen.getByRole('button', { name: /open menu/i });
     expect(hamburger).toBeInTheDocument();
-    const dropdown = hamburger.closest('.dropdown');
-    expect(dropdown).toHaveClass('lg:hidden');
+    expect(hamburger).toHaveClass('lg:hidden');
+    expect(hamburger).toHaveAttribute('popoverTarget', 'mobile-menu');
+    // Menu ul uses Popover API with DaisyUI dropdown class
+    const menu = document.getElementById('mobile-menu');
+    expect(menu).toBeInTheDocument();
+    expect(menu).toHaveClass('dropdown');
+    expect(menu).toHaveAttribute('popover');
   });
 
   it('does NOT render user dropdown when user is null (not logged in)', () => {

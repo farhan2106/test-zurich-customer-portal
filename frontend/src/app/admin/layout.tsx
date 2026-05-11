@@ -2,16 +2,27 @@
 
 import { useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout';
 import { Spinner } from '@/components/ui';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAppSelector((state) => state.auth);
+  const router = useRouter();
 
   useEffect(() => {
     document.title = 'Admin — Zurich';
   }, []);
+
+  // Redirect in useEffect (not in render phase) to avoid
+  // "Rendered more hooks than during the previous render" error
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/');
+    } else if (!isLoading && user && user.role !== 'admin') {
+      router.push('/dashboard');
+    }
+  }, [user, isLoading, router]);
 
   // Auth check still initializing
   if (isLoading) {
@@ -22,15 +33,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // Not authenticated — redirect to home
+  // Not authenticated → render nothing (useEffect will redirect)
   if (!user) {
-    redirect('/');
     return null;
   }
 
-  // Not admin role — redirect to dashboard
+  // Not admin role → render nothing (useEffect will redirect)
   if (user.role !== 'admin') {
-    redirect('/dashboard');
     return null;
   }
 

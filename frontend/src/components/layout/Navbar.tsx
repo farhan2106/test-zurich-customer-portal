@@ -79,8 +79,8 @@ export function Navbar() {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const visibleLinks = NAV_LINKS.filter(
     (link) => !link.adminOnly || user?.role === 'admin',
@@ -106,55 +106,56 @@ export function Navbar() {
     >
       {/* navbar-start: Logo/brand + mobile hamburger */}
       <div className="navbar-start gap-2">
-        {/* Mobile hamburger */}
-        <div className="dropdown lg:hidden">
-          <button
-            type="button"
-            tabIndex={0}
-            role="button"
-            className="btn btn-ghost btn-sm"
-            aria-label="Open menu"
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen(!mobileOpen)}
+        {/* Mobile hamburger - uses DaisyUI v5 Popover API for mobile compatibility */}
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm lg:hidden"
+          aria-label="Open menu"
+          popoverTarget="mobile-menu"
+          style={{ anchorName: '--anchor-mobile-menu' } as React.CSSProperties}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-          {mobileOpen && (
-            <ul
-              tabIndex={0}
-              className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-64 p-2 shadow"
-            >
-              {visibleLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className={isActive(link.href) ? 'btn-active' : ''}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {ICONS[link.icon]}
-                    <span>
-                      <span className="font-medium">{link.label}</span>
-                      <span className="block text-xs opacity-60">{link.description}</span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+        <ul
+          id="mobile-menu"
+          className="dropdown menu menu-sm bg-base-100 rounded-box mt-3 w-64 p-2 shadow"
+          popover="auto"
+          style={{ positionAnchor: '--anchor-mobile-menu' } as React.CSSProperties}
+        >
+          {visibleLinks.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                className={isActive(link.href) ? 'btn-active' : ''}
+                onClick={() => {
+                  const el = document.getElementById('mobile-menu');
+                  if (el && 'hidePopover' in el) {
+                    (el as HTMLElement).hidePopover();
+                  }
+                }}
+              >
+                {ICONS[link.icon]}
+                <span>
+                  <span className="font-medium">{link.label}</span>
+                  <span className="block text-xs opacity-60">{link.description}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
 
         {/* Brand */}
         <Link href="/dashboard" className="btn btn-ghost text-xl font-bold text-primary gap-1">

@@ -1,9 +1,25 @@
 import React from 'react';
-import { redirect } from 'next/navigation';
 import AdminLayout from './layout';
 import { renderWithProviders, screen } from '@/test-utils';
 
+const mockPush = jest.fn();
+
 jest.mock('@/services/api-client');
+
+jest.mock('next/navigation', () => ({
+  usePathname: jest.fn(() => '/admin/customers'),
+  useRouter: jest.fn(() => ({
+    push: mockPush,
+    replace: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    prefetch: jest.fn(),
+  })),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
+  useParams: jest.fn(() => ({})),
+  redirect: jest.fn(),
+}));
 
 describe('AdminLayout', () => {
   beforeEach(() => {
@@ -27,7 +43,7 @@ describe('AdminLayout', () => {
       },
     });
 
-    expect(redirect).toHaveBeenCalledWith('/');
+    expect(mockPush).toHaveBeenCalledWith('/');
   });
 
   it('redirects non-admin user to /dashboard when user.role is customer', () => {
@@ -42,7 +58,7 @@ describe('AdminLayout', () => {
       },
     });
 
-    expect(redirect).toHaveBeenCalledWith('/dashboard');
+    expect(mockPush).toHaveBeenCalledWith('/dashboard');
   });
 
   it('shows children when user has admin role', () => {

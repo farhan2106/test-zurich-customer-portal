@@ -2,12 +2,14 @@ import { render, screen } from '@/test-utils';
 import { ProtectedRoute } from './ProtectedRoute';
 import * as nextNavigation from 'next/navigation';
 
+const mockPush = jest.fn();
+
 jest.mock('@/services/api-client');
 
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(() => '/dashboard'),
   useRouter: jest.fn(() => ({
-    push: jest.fn(),
+    push: mockPush,
     replace: jest.fn(),
     back: jest.fn(),
     forward: jest.fn(),
@@ -20,6 +22,10 @@ jest.mock('next/navigation', () => ({
 }));
 
 describe('ProtectedRoute', () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+  });
+
   const authenticatedCustomer = {
     auth: {
       user: { id: '1', email: 'a@b.com', firstName: 'Test', lastName: 'User', role: 'customer' },
@@ -69,7 +75,7 @@ describe('ProtectedRoute', () => {
     render(<ProtectedRoute><div>Protected Content</div></ProtectedRoute>, {
       preloadedState: unauthenticated,
     });
-    expect(nextNavigation.redirect).toHaveBeenCalledWith('/');
+    expect(mockPush).toHaveBeenCalledWith('/');
   });
 
   it('shows spinner when isLoading is true', () => {
@@ -84,7 +90,7 @@ describe('ProtectedRoute', () => {
     render(<ProtectedRoute><div>Protected Content</div></ProtectedRoute>, {
       preloadedState: tokenButNoUser,
     });
-    expect(nextNavigation.redirect).toHaveBeenCalledWith('/');
+    expect(mockPush).toHaveBeenCalledWith('/');
   });
 
   it('redirects non-admin from admin route to /dashboard', () => {
@@ -92,7 +98,7 @@ describe('ProtectedRoute', () => {
       <ProtectedRoute adminRequired><div>Admin Content</div></ProtectedRoute>,
       { preloadedState: authenticatedCustomer },
     );
-    expect(nextNavigation.redirect).toHaveBeenCalledWith('/dashboard');
+    expect(mockPush).toHaveBeenCalledWith('/dashboard');
   });
 
   it('renders children when authenticated with correct role', () => {
