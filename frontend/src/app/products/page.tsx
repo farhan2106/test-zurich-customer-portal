@@ -58,7 +58,16 @@ export default function ProductsPage() {
         )}
 
         {!loading && !error && products.length === 0 && (
-          <p className="text-base-content/70">No products available at this time.</p>
+          <div className="text-center py-12">
+            <p className="text-lg mb-2">No products available.</p>
+            <p className="text-base-content/50 text-sm">
+              The database may not be seeded yet. Run{' '}
+              <code className="bg-base-200 px-1.5 py-0.5 rounded text-xs font-mono">
+                npm run seed
+              </code>{' '}
+              in the backend project to populate product data.
+            </p>
+          </div>
         )}
 
         {!loading && !error && products.length > 0 && (

@@ -204,7 +204,12 @@ describe('ProductsPage', () => {
       render(<ProductsPage />, { preloadedState: authenticatedState });
       await waitFor(() => {
         expect(
-          screen.getByText(/No products available at this time/i)
+          screen.getByText(/No products available/i)
+        ).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(
+          screen.getByText(/npm run seed/i)
         ).toBeInTheDocument();
       });
     });
