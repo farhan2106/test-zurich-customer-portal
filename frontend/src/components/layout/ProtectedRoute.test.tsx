@@ -2,6 +2,8 @@ import { render, screen } from '@/test-utils';
 import { ProtectedRoute } from './ProtectedRoute';
 import * as nextNavigation from 'next/navigation';
 
+jest.mock('@/services/api-client');
+
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(() => '/dashboard'),
   useRouter: jest.fn(() => ({

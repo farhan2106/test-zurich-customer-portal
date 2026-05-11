@@ -279,7 +279,7 @@ export default function AdminCustomerDetailPage() {
                     <tr key={policy.id}>
                       <td>{policy.policyNumber}</td>
                       <td>
-                        <Badge variant={policy.status === 'active' ? 'success' : 'neutral'}>
+                        <Badge className="px-4" variant={policy.status === 'active' ? 'success' : 'neutral'}>
                           {policy.status}
                         </Badge>
                       </td>
@@ -318,7 +318,7 @@ export default function AdminCustomerDetailPage() {
                       <td>{claim.claimNumber}</td>
                       <td>{claim.type}</td>
                       <td>
-                        <Badge variant={claim.status === 'submitted' ? 'info' : 'neutral'}>
+                        <Badge className="px-4" variant={claim.status === 'submitted' ? 'info' : 'neutral'}>
                           {claim.status}
                         </Badge>
                       </td>

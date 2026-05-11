@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@/test-utils';
+import { render, screen, fireEvent, waitFor, act, within } from '@/test-utils';
 import * as policyService from '@/services/policy.service';
 import * as nextNavigation from 'next/navigation';
 
@@ -166,8 +166,8 @@ describe('Dashboard Page', () => {
 
     render(<DashboardPage />, { preloadedState: authenticatedState });
 
-    const skeletons = screen.getAllByRole('status');
-    expect(skeletons.length).toBeGreaterThanOrEqual(1);
+    const skeletons = document.querySelectorAll('.skeleton');
+    expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('shows error state with "Unable to load your portfolio" and retry button', async () => {
@@ -241,11 +241,10 @@ describe('Dashboard Page', () => {
       render(<DashboardPage />, { preloadedState: authenticatedState });
     });
 
-    const productsLink = screen.getByRole('link', {
-      name: /products/i,
-    });
-
-    expect(productsLink).toHaveAttribute('href', '/products');
+    const main = screen.getByRole('main');
+    const links = within(main).getAllByRole('link', { name: /products/i });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    expect(links.some(link => link.getAttribute('href') === '/products')).toBe(true);
   });
 
   it('renders as a protected route (ProtectedRoute is used)', async () => {

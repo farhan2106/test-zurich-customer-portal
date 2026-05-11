@@ -23,10 +23,10 @@ export default function DashboardPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return <Badge variant="success">Active</Badge>;
-      case 'expired': return <Badge variant="neutral">Expired</Badge>;
-      case 'cancelled': return <Badge variant="warning">Cancelled</Badge>;
-      default: return <Badge variant="neutral">{status}</Badge>;
+      case 'active': return <Badge className="px-4" variant="success">Active</Badge>;
+      case 'expired': return <Badge className="px-4" variant="neutral">Expired</Badge>;
+      case 'cancelled': return <Badge className="px-4" variant="warning">Cancelled</Badge>;
+      default: return <Badge className="px-4" variant="neutral">{status}</Badge>;
     }
   };
 

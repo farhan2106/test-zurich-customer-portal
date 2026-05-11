@@ -18,12 +18,12 @@ export default function ClaimsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'submitted': return <Badge variant="info">Submitted</Badge>;
-      case 'under_review': return <Badge variant="warning">Under Review</Badge>;
-      case 'approved': return <Badge variant="success">Approved</Badge>;
-      case 'rejected': return <Badge variant="error">Rejected</Badge>;
-      case 'paid': return <Badge variant="neutral">Paid</Badge>;
-      default: return <Badge variant="neutral">{status}</Badge>;
+      case 'submitted': return <Badge className="px-4" variant="info">Submitted</Badge>;
+      case 'under_review': return <Badge className="px-4" variant="warning">Under Review</Badge>;
+      case 'approved': return <Badge className="px-4" variant="success">Approved</Badge>;
+      case 'rejected': return <Badge className="px-4" variant="error">Rejected</Badge>;
+      case 'paid': return <Badge className="px-4" variant="neutral">Paid</Badge>;
+      default: return <Badge className="px-4" variant="neutral">{status}</Badge>;
     }
   };
 
@@ -68,7 +68,11 @@ export default function ClaimsPage() {
         {!isLoading && !error && claims.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {claims.map(claim => (
-              <div key={claim.id} className="card bg-base-100 shadow-xl">
+              <Link
+                key={claim.id}
+                href={`/claims/${claim.id}`}
+                className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer"
+              >
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <h2 className="card-title text-lg">{claim.claimNumber}</h2>
@@ -81,10 +85,10 @@ export default function ClaimsPage() {
                     <p>{claim.description}</p>
                   </div>
                   <div className="card-actions justify-end gap-2 mt-2">
-                    <Link href={`/claims/${claim.id}`} className="btn btn-outline btn-sm">View Details</Link>
+                    <span className="btn btn-outline btn-sm">View Details</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

@@ -22,6 +22,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
             firstName: profile.firstName,
             lastName: profile.lastName,
             role: profile.role,
+            photoUrl: profile.photoUrl ?? null,
           },
         }));
       } catch {

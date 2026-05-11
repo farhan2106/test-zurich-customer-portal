@@ -24,17 +24,17 @@ function formatDate(dateString: string): string {
 function getStatusBadge(status: string) {
   switch (status) {
     case 'submitted':
-      return <Badge variant="info">Submitted</Badge>;
+      return <Badge className="px-4" variant="info">Submitted</Badge>;
     case 'under_review':
-      return <Badge variant="warning">Under Review</Badge>;
+      return <Badge className="px-4" variant="warning">Under Review</Badge>;
     case 'approved':
-      return <Badge variant="success">Approved</Badge>;
+      return <Badge className="px-4" variant="success">Approved</Badge>;
     case 'rejected':
-      return <Badge variant="error">Rejected</Badge>;
+      return <Badge className="px-4" variant="error">Rejected</Badge>;
     case 'paid':
-      return <Badge variant="neutral">Paid</Badge>;
+      return <Badge className="px-4" variant="neutral">Paid</Badge>;
     default:
-      return <Badge variant="neutral">{status}</Badge>;
+      return <Badge className="px-4" variant="neutral">{status}</Badge>;
   }
 }
 

@@ -78,7 +78,7 @@ export default function PolicyDetailPage() {
               <h1 className="text-3xl font-bold">
                 {policy.product?.name || 'Policy'}
               </h1>
-              <Badge variant={getStatusVariant(policy.status)}>
+              <Badge className="px-4" variant={getStatusVariant(policy.status)}>
                 {policy.status}
               </Badge>
             </div>
@@ -141,17 +141,22 @@ export default function PolicyDetailPage() {
                 {policy.claims && policy.claims.length > 0 ? (
                   <div className="space-y-4 mt-4">
                     {policy.claims.map((claim) => (
-                      <div key={claim.id} className="border rounded-lg p-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {claim.claimNumber}
-                          </span>
-                          <Badge variant="neutral">{claim.status}</Badge>
+                      <Link
+                        key={claim.id}
+                        href={`/claims/${claim.id}`}
+                      >
+                        <div key={claim.id} className="border rounded-lg p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              {claim.claimNumber}
+                            </span>
+                            <Badge className="px-4" variant="neutral">{claim.status}</Badge>
+                          </div>
+                          <p className="text-sm mt-1">
+                            {claim.type} &mdash; {claim.description}
+                          </p>
                         </div>
-                        <p className="text-sm mt-1">
-                          {claim.type} &mdash; {claim.description}
-                        </p>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 ) : (

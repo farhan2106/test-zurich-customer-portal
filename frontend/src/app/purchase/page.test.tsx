@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@/test-utils';
+import { render, screen, fireEvent, waitFor, within } from '@/test-utils';
 import * as policyService from '@/services/policy.service';
 jest.mock('@/services/api-client', () => ({
   __esModule: true,
@@ -103,7 +103,8 @@ describe('Purchase Page', () => {
     });
 
     // At Step 1, the first step should have step-primary
-    const steps = screen.getAllByRole('listitem');
+    const main = screen.getByRole('main');
+    const steps = main.querySelectorAll('.steps li');
     // Just verify the steps exist
     expect(steps.length).toBe(3);
   });
@@ -114,7 +115,9 @@ describe('Purchase Page', () => {
     await waitFor(() => {
       expect(screen.getByText('Auto Insurance')).toBeInTheDocument();
       expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('test@example.com')).toBeInTheDocument();
+      const main = screen.getByRole('main');
+      const mainContent = within(main);
+      expect(mainContent.getByText('test@example.com')).toBeInTheDocument();
       expect(screen.getByText(/RM 1,500/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /continue to review/i })).toBeInTheDocument();
     });

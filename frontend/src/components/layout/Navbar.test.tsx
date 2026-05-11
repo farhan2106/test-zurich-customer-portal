@@ -24,7 +24,7 @@ jest.mock('next/navigation', () => ({
 describe('Navbar', () => {
   const customerPreloadedState = {
     auth: {
-      user: { id: '1', email: 'a@b.com', firstName: 'Test', lastName: 'User', role: 'customer' },
+      user: { id: '1', email: 'a@b.com', firstName: 'Test', lastName: 'User', role: 'customer', photoUrl: null },
       token: null,
       isLoading: false,
       error: null,
@@ -33,14 +33,14 @@ describe('Navbar', () => {
 
   const adminPreloadedState = {
     auth: {
-      user: { id: '1', email: 'a@b.com', firstName: 'Test', lastName: 'User', role: 'admin' },
+      user: { id: '1', email: 'a@b.com', firstName: 'Test', lastName: 'User', role: 'admin', photoUrl: null },
       token: null,
       isLoading: false,
       error: null,
     },
   };
 
-  it('renders Zurich brand link', () => {
+  it('renders Zurich brand link with shield icon', () => {
     render(<Navbar />, { preloadedState: customerPreloadedState });
     expect(screen.getByRole('link', { name: /zurich/i })).toBeInTheDocument();
   });
@@ -75,6 +75,12 @@ describe('Navbar', () => {
     expect(screen.getByRole('button', { name: /user menu for test/i })).toBeInTheDocument();
   });
 
+  it('renders user email in dropdown signed-in info', () => {
+    render(<Navbar />, { preloadedState: customerPreloadedState });
+    expect(screen.getByText(/signed in as/i)).toBeInTheDocument();
+    expect(screen.getByText(/a@b\.com/i)).toBeInTheDocument();
+  });
+
   it('renders Sign Out button in dropdown', () => {
     render(<Navbar />, { preloadedState: customerPreloadedState });
     expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
@@ -90,7 +96,7 @@ describe('Navbar', () => {
 
     render(<Navbar />, { store });
 
-    const signOutBtn = screen.getByRole('button', { name: /sign out/i });
+    const signOutBtn = screen.getByTestId('sign-out-btn');
     await userEvent.click(signOutBtn);
 
     // waitFor handles the async dispatch in handleSignOut (which awaits apiClient.post before dispatching)

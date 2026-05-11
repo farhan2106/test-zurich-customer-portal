@@ -103,6 +103,7 @@ describe('AuthInitializer (inside Providers)', () => {
         firstName: mockProfile.firstName,
         lastName: mockProfile.lastName,
         role: mockProfile.role,
+        photoUrl: null
       });
     });
   });

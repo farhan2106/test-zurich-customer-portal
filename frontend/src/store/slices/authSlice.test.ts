@@ -51,6 +51,7 @@ describe('authSlice', () => {
       firstName: 'Test',
       lastName: 'User',
       role: 'customer',
+      photoUrl: null,
     };
     const mockToken = 'eyJhbGciOiJIUzI1NiJ9.mock.token';
 
@@ -90,6 +91,7 @@ describe('authSlice', () => {
         firstName: 'Test',
         lastName: 'User',
         role: 'customer',
+        photoUrl: null,
       };
       store.dispatch(loginSuccess({ user: mockUser }));
       store.dispatch(loginStart());
@@ -121,6 +123,7 @@ describe('authSlice', () => {
         firstName: 'Test',
         lastName: 'User',
         role: 'customer',
+        photoUrl: null,
       };
       store.dispatch(loginSuccess({ user: mockUser }));
       store.dispatch(loginFailure('some error'));
@@ -145,6 +148,7 @@ describe('authSlice', () => {
         firstName: 'Test',
         lastName: 'User',
         role: 'customer',
+        photoUrl: null,
       };
       store.dispatch(loginSuccess({ user: mockUser }));
       store.dispatch(loginFailure('temporary.error'));

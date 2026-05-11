@@ -74,6 +74,7 @@ describe('Auth Callback Page', () => {
         firstName: 'Test',
         lastName: 'User',
         role: 'customer',
+        photoUrl: null,
       });
     });
   });

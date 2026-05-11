@@ -229,7 +229,7 @@ describe('PolicyDetailPage', () => {
         });
       });
 
-      expect(screen.getByText(/Claims/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /Claims/i })).toBeInTheDocument();
       expect(screen.getByText('CLM-2024-001')).toBeInTheDocument();
       expect(screen.getByText('CLM-2024-002')).toBeInTheDocument();
       expect(screen.getByText(/Windshield damage/)).toBeInTheDocument();

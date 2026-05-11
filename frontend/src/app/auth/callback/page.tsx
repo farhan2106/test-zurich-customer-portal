@@ -24,6 +24,7 @@ function CallbackContent() {
             firstName: profile.firstName,
             lastName: profile.lastName,
             role: profile.role,
+            photoUrl: profile.photoUrl ?? null,
           },
         }));
 

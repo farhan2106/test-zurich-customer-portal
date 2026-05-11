@@ -104,7 +104,7 @@ export default function ProductDetailPage() {
         </Link>
 
         <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-        <Badge variant="info">Product Code: {product.productCode}</Badge>
+        <Badge variant="info" className="px-4">Product Code: {product.productCode}</Badge>
 
         <p className="mt-4 text-base-content/80">{product.description}</p>
 
