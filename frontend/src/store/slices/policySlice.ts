@@ -3,6 +3,11 @@ import type { RootState } from '../index';
 import type { Policy } from '@/services/policy.service';
 import * as policyService from '@/services/policy.service';
 
+interface RejectValue {
+  status?: number;
+  message?: string;
+}
+
 interface PolicyState {
   items: Policy[];
   isLoading: boolean;
@@ -23,13 +28,35 @@ export const fetchPolicyById = createAsyncThunk('policy/fetchPolicyById', async 
   return policyService.getPolicyById(id);
 });
 
-export const purchasePolicy = createAsyncThunk('policy/purchasePolicy', async (productId: string) => {
-  return policyService.purchasePolicy(productId);
-});
+export const purchasePolicy = createAsyncThunk(
+  'policy/purchasePolicy',
+  async (productId: string, { rejectWithValue }) => {
+    try {
+      return await policyService.purchasePolicy(productId);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      return rejectWithValue({
+        status: axiosErr.response?.status,
+        message: axiosErr.response?.data?.message || axiosErr.message || 'Purchase failed',
+      });
+    }
+  }
+);
 
-export const renewPolicy = createAsyncThunk('policy/renewPolicy', async (policyId: string) => {
-  return policyService.renewPolicy(policyId);
-});
+export const renewPolicy = createAsyncThunk(
+  'policy/renewPolicy',
+  async (policyId: string, { rejectWithValue }) => {
+    try {
+      return await policyService.renewPolicy(policyId);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      return rejectWithValue({
+        status: axiosErr.response?.status,
+        message: axiosErr.response?.data?.message || axiosErr.message || 'Renewal failed',
+      });
+    }
+  }
+);
 
 const policySlice = createSlice({
   name: 'policy',
@@ -74,7 +101,7 @@ const policySlice = createSlice({
       state.items.push(action.payload);
     });
     builder.addCase(purchasePolicy.rejected, (state, action) => {
-      state.error = action.error.message || 'Purchase failed';
+      state.error = (action.payload as RejectValue)?.message || action.error.message || 'Purchase failed';
     });
 
     // renewPolicy
@@ -85,7 +112,7 @@ const policySlice = createSlice({
       }
     });
     builder.addCase(renewPolicy.rejected, (state, action) => {
-      state.error = action.error.message || 'Renewal failed';
+      state.error = (action.payload as RejectValue)?.message || action.error.message || 'Renewal failed';
     });
   },
 });

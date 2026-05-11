@@ -1,0 +1,24 @@
+{
+  "name": "zurich-customer-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zurich Customer Portal - Monorepo",
+  "scripts": {
+    "prepare": "husky",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:staged": "lint-staged"
+  },
+  "lint-staged": {
+    "frontend/**/*.{ts,tsx}": [
+      "npm --prefix frontend run lint -- --fix --no-warn-ignored"
+    ],
+    "backend/**/*.ts": [
+      "npm --prefix backend run lint -- --fix --no-warn-ignored"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0"
+  }
+}

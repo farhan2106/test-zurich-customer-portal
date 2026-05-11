@@ -19,27 +19,28 @@ interface Product {
   status: string;
 }
 
-function PurchaseContent() {
-  const searchParams = useSearchParams();
-  const productId = searchParams.get('productId') || '';
+function PurchaseContent({ productId }: { productId: string }) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector(state => state.auth);
 
   const [step, setStep] = useState(1);
   const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [purchasedPolicyNumber, setPurchasedPolicyNumber] = useState('');
 
+  // Fetch product data — key prop handles state reset on productId change
   useEffect(() => {
     if (!productId) return;
-    setLoading(true);
+
     apiClient.get(`/products/${productId}`)
-      .then(res => { setProduct(res.data); setLoading(false); })
-      .catch(() => { setError('Failed to load product'); setLoading(false); });
+      .then(res => setProduct(res.data))
+      .catch(() => setError('Failed to load product'));
   }, [productId]);
+
+  // Loading is derived: true when we have a productId but no result yet
+  const loading = !!productId && product === null && error === null;
 
   const handlePurchase = async () => {
     setPurchasing(true);
@@ -48,12 +49,12 @@ function PurchaseContent() {
       const result = await dispatch(purchasePolicy(productId)).unwrap();
       setPurchasedPolicyNumber(result.policyNumber);
       setStep(3);
-    } catch (err: any) {
-      const message = err?.message || 'Purchase failed';
-      if (err?.response?.status === 409) {
+    } catch (err: unknown) {
+      const error = err as { status?: number; message?: string };
+      if (error?.status === 409) {
         setError('You already have an active policy for this product');
       } else {
-        setError(message);
+        setError(error?.message || 'Purchase failed');
       }
     } finally {
       setPurchasing(false);
@@ -193,10 +194,17 @@ function PurchaseContent() {
   );
 }
 
+function PurchasePageInner() {
+  const searchParams = useSearchParams();
+  const productId = searchParams.get('productId') || '';
+
+  return <PurchaseContent key={productId} productId={productId} />;
+}
+
 export default function PurchasePage() {
   return (
     <Suspense fallback={<div className="flex justify-center py-12"><Spinner size="lg" /></div>}>
-      <PurchaseContent />
+      <PurchasePageInner />
     </Suspense>
   );
 }
