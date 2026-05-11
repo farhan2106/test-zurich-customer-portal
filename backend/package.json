@@ -18,11 +18,15 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:integration": "npm run test:db:start && jest --config jest.integration.config.js && test:db:stop",
+    "test:integration": "npm run test:db:start && jest --config jest.integration.config.js && npm run test:db:stop",
     "test:all": "npm test && npm run test:integration",
-    "test:db:start": "docker compose -f ../docker-compose.test.yml up -d --wait --remove-orphans",
-    "test:db:stop": "docker compose -f ../docker-compose.test.yml down",
-    "seed": "ts-node src/seed/seed.ts"
+    "test:db:start": "docker compose -f test/docker-compose.test.yml up -d --wait --remove-orphans",
+    "test:db:stop": "docker compose -f test/docker-compose.test.yml down",
+    "seed": "ts-node src/seed/seed.ts",
+    "migration:generate": "npm run build && typeorm-ts-node-commonjs migration:generate -d src/config/typeorm.config.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/config/typeorm.config.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/typeorm.config.ts",
+    "migration:create": "typeorm migration:create"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -86,7 +90,9 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/migrations/**",
+      "!**/seed/**"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

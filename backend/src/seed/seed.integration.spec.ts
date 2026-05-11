@@ -2,7 +2,7 @@ import { DataSource, Repository } from 'typeorm';
 import {
   createTestDataSource,
   initializeTestDataSource,
-} from '../test/test-db.config';
+} from '../config/test-db.config';
 import { Customer } from '../entities/customer.entity';
 import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
