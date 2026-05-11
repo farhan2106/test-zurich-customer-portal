@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
@@ -30,7 +30,22 @@ export class AuthController {
     const customer = await this.authService.validateOrCreateUser(googleProfile);
     const token = this.authService.signToken(customer);
 
-    res.redirect(`http://localhost:3000/auth/callback?token=${token}`);
+    // Set HTTP-only cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Redirect to frontend callback (no token in URL)
+    res.redirect('http://localhost:3000/auth/callback');
+  }
+
+  @Post('logout')
+  logout(@Res() res: Response): void {
+    res.clearCookie('token');
+    res.json({ message: 'Logged out successfully' });
   }
 
   @Get('profile')

@@ -9,91 +9,102 @@ describe('apiClient', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  describe('request interceptor logic', () => {
-    const applyRequestInterceptor = (config: any) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      }
-      return config;
-    };
-
-    it('should attach Authorization: Bearer <token> from localStorage', () => {
-      localStorage.setItem('token', 'test-jwt-token');
-      const config = { headers: {} as Record<string, string> };
-
-      const result = applyRequestInterceptor(config);
-
-      expect(result.headers.Authorization).toBe('Bearer test-jwt-token');
-    });
-
-    it('should skip Authorization header if no token in localStorage', () => {
-      const config = { headers: {} as Record<string, string> };
-
-      const result = applyRequestInterceptor(config);
-
-      expect(result.headers.Authorization).toBeUndefined();
-    });
-
-    it('should return config unchanged', () => {
-      const config = { headers: {} as Record<string, string>, url: '/test' };
-
-      const result = applyRequestInterceptor(config);
-
-      expect(result).toBe(config);
-    });
-  });
-
-  describe('response interceptor logic', () => {
+  describe('response interceptor logic (specification tests)', () => {
     const applyResponseSuccess = (response: any) => response;
 
     const applyResponseError = (error: any) => {
+      // No more localStorage handling — just redirect on 401
       if (error.response?.status === 401 && typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        window.location.href = '/';
       }
       return Promise.reject(error);
     };
 
     it('should pass through successful responses unchanged', () => {
       const response = { data: { id: 1 }, status: 200 };
-
       const result = applyResponseSuccess(response);
-
       expect(result).toBe(response);
       expect(result.data).toEqual({ id: 1 });
     });
 
-    it('should clear localStorage on 401 response', async () => {
-      localStorage.setItem('token', 'existing-token');
-
+    it('should redirect to / on 401 response', () => {
       const error = { response: { status: 401 } };
-
-      await applyResponseError(error).catch(() => {});
-
-      expect(localStorage.getItem('token')).toBeNull();
+      
+      // Save and suppress error
+      const promise = applyResponseError(error).catch(() => {});
+      
+      expect(window.location.pathname).toBe('/');
     });
 
-    it('should not clear localStorage on non-401 errors', async () => {
-      localStorage.setItem('token', 'existing-token');
+    it('should still reject the promise after redirect', async () => {
+      const error = { response: { status: 401 } };
+      await expect(applyResponseError(error)).rejects.toEqual(error);
+    });
 
+    it('should not redirect on other status codes (e.g. 500)', () => {
+      const originalHref = window.location.href;
       const error = { response: { status: 500 } };
-
-      await applyResponseError(error).catch(() => {});
-
-      expect(localStorage.getItem('token')).toBe('existing-token');
+      
+      applyResponseError(error).catch(() => {});
+      
+      expect(window.location.href).toBe(originalHref);
     });
 
-    it('should reject the error to propagate it to callers', async () => {
-      const error = { response: { status: 403 } };
+    it('should not redirect on non-HTTP errors (network failure)', () => {
+      const originalHref = window.location.href;
+      const error = new Error('Network Error');
+      
+      applyResponseError(error).catch(() => {});
+      
+      expect(window.location.href).toBe(originalHref);
+    });
+  });
 
-      await expect(applyResponseError(error)).rejects.toBe(error);
+  describe('response interceptor URL guard (fix: prevent infinite redirect on /auth/profile 401)', () => {
+    let errorHandler: Function;
+    const originalHref = 'http://localhost/original-page';
+
+    beforeAll(() => {
+      // Import the REAL api-client module (bypass __mocks__ via relative path)
+      // to access the actual axios response interceptor error handler.
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const realApiClient = require('./api-client').default;
+      // Access the rejected (error) handler registered on the axios instance
+      errorHandler = (realApiClient.interceptors.response as any).handlers[0].rejected;
+    });
+
+    beforeEach(() => {
+      window.location.href = originalHref;
+    });
+
+    it('should NOT redirect on 401 from /auth/profile (silently reject)', async () => {
+      const error = {
+        response: { status: 401 },
+        config: { url: '/api/auth/profile' },
+      };
+
+      await expect(errorHandler(error)).rejects.toEqual(error);
+      expect(window.location.href).toBe(originalHref);
+    });
+
+    it('should redirect to / on 401 from other endpoints (e.g. /policies)', () => {
+      const error = {
+        response: { status: 401 },
+        config: { url: '/api/policies' },
+      };
+
+      errorHandler(error).catch(() => {});
+
+      expect(window.location.href).toBe('http://localhost/');
+    });
+
+    it('should still reject the promise for auth profile endpoints', async () => {
+      const error = {
+        response: { status: 401 },
+        config: { url: '/api/auth/profile' },
+      };
+
+      await expect(errorHandler(error)).rejects.toEqual(error);
     });
   });
 });

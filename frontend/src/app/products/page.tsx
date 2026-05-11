@@ -8,7 +8,7 @@ import { Card, Badge, Skeleton, Button } from '@/components/ui';
 
 interface Product {
   id: string;
-  code: number;
+  productCode: number;
   name: string;
   description: string;
   coverageDetails: Record<string, string>;
@@ -66,7 +66,7 @@ export default function ProductsPage() {
             {products.map((product) => (
               <Card key={product.id}>
                 <div className="space-y-3">
-                  <Badge variant="info">Code: {product.code}</Badge>
+                  <Badge variant="info">Code: {product.productCode}</Badge>
                   <h2 className="card-title">{product.name}</h2>
                   <p className="text-sm text-base-content/70">
                     {product.description?.substring(0, 120)}...

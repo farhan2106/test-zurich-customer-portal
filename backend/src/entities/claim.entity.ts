@@ -34,12 +34,6 @@ export class Claim {
   @Column({ type: 'text' })
   description: string;
 
-  @Column({ type: 'text' })
-  description2: string;
-
-  @Column({ type: 'text' })
-  description3: string;
-
   @Column({ type: 'timestamp' })
   incidentDate: Date;
 

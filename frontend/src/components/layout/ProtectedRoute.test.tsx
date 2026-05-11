@@ -21,7 +21,7 @@ describe('ProtectedRoute', () => {
   const authenticatedCustomer = {
     auth: {
       user: { id: '1', email: 'a@b.com', firstName: 'Test', lastName: 'User', role: 'customer' },
-      token: 'test-token',
+      token: null,
       isLoading: false,
       error: null,
     },
@@ -30,7 +30,7 @@ describe('ProtectedRoute', () => {
   const authenticatedAdmin = {
     auth: {
       user: { id: '1', email: 'a@b.com', firstName: 'Test', lastName: 'User', role: 'admin' },
-      token: 'test-token',
+      token: null,
       isLoading: false,
       error: null,
     },
@@ -48,7 +48,7 @@ describe('ProtectedRoute', () => {
   const loadingState = {
     auth: {
       user: null,
-      token: 'test-token',
+      token: null,
       isLoading: true,
       error: null,
     },
@@ -57,17 +57,17 @@ describe('ProtectedRoute', () => {
   const tokenButNoUser = {
     auth: {
       user: null,
-      token: 'test-token',
+      token: null,
       isLoading: false,
       error: null,
     },
   };
 
-  it('redirects to /login when token is null', () => {
+  it('redirects to / when user is null and not loading', () => {
     render(<ProtectedRoute><div>Protected Content</div></ProtectedRoute>, {
       preloadedState: unauthenticated,
     });
-    expect(nextNavigation.redirect).toHaveBeenCalledWith('/login');
+    expect(nextNavigation.redirect).toHaveBeenCalledWith('/');
   });
 
   it('shows spinner when isLoading is true', () => {
@@ -78,12 +78,11 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Authenticating')).toHaveClass('sr-only');
   });
 
-  it('shows spinner when token exists but user is null (mid-load state)', () => {
+  it('redirects to / when user is null and not loading (no session)', () => {
     render(<ProtectedRoute><div>Protected Content</div></ProtectedRoute>, {
       preloadedState: tokenButNoUser,
     });
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.getByText('Loading profile')).toHaveClass('sr-only');
+    expect(nextNavigation.redirect).toHaveBeenCalledWith('/');
   });
 
   it('redirects non-admin from admin route to /dashboard', () => {

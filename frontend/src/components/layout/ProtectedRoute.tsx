@@ -13,7 +13,7 @@ export function ProtectedRoute({
   children,
   adminRequired = false,
 }: ProtectedRouteProps) {
-  const { token, user, isLoading } = useAppSelector((state) => state.auth);
+  const { user, isLoading } = useAppSelector((state) => state.auth);
 
   // 1. If still loading auth state → show spinner
   if (isLoading) {
@@ -24,25 +24,16 @@ export function ProtectedRoute({
     );
   }
 
-  // 2. If no token → redirect to login
-  if (!token) {
-    redirect('/login');
-  }
-
-  // 3. If token exists but no user yet → show spinner (might be mid-load)
+  // 2. If no user → redirect to home (login page)
   if (!user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner size="lg" label="Loading profile" />
-      </div>
-    );
+    redirect('/');
   }
 
-  // 4. If admin required but user is not admin → redirect to dashboard
+  // 3. If admin required but user is not admin → redirect to dashboard
   if (adminRequired && user.role !== 'admin') {
     redirect('/dashboard');
   }
 
-  // 5. All checks passed → render children
+  // 4. All checks passed → render children
   return <>{children}</>;
 }

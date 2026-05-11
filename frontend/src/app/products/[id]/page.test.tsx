@@ -38,7 +38,7 @@ import ProductDetailPage from '@/app/products/[id]/page';
 
 const mockProduct = {
   id: '1',
-  code: 4000,
+  productCode: 4000,
   name: 'Auto Insurance',
   description: 'Comprehensive auto coverage for all vehicle types including third-party liability, own damage, and personal accident protection.',
   basePremium: 500.0,

@@ -19,7 +19,7 @@ interface PremiumByLocation {
 
 interface Product {
   id: string;
-  code: number;
+  productCode: number;
   name: string;
   description: string;
   coverageDetails: CoverageDetail[];
@@ -104,7 +104,7 @@ export default function ProductDetailPage() {
         </Link>
 
         <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-        <Badge variant="info">Product Code: {product.code}</Badge>
+        <Badge variant="info">Product Code: {product.productCode}</Badge>
 
         <p className="mt-4 text-base-content/80">{product.description}</p>
 

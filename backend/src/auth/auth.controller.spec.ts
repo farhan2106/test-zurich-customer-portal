@@ -86,14 +86,28 @@ describe('AuthController', () => {
       authService.signToken.mockReturnValue(mockToken);
 
       const mockReq = { user: mockGoogleProfile } as unknown as Request;
-      const mockRes = { redirect: jest.fn() } as unknown as Response;
+      const mockRes = {
+        redirect: jest.fn(),
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
 
       await controller.googleCallback(mockReq, mockRes);
 
       expect(authService.validateOrCreateUser).toHaveBeenCalledWith(mockGoogleProfile);
       expect(authService.signToken).toHaveBeenCalledWith(mockCustomer);
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'token',
+        mockToken,
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'none',
+          secure: true,
+          maxAge: expect.any(Number),
+        }),
+      );
       expect(mockRes.redirect).toHaveBeenCalledWith(
-        `http://localhost:3000/auth/callback?token=${mockToken}`,
+        'http://localhost:3000/auth/callback',
       );
     });
 
@@ -109,14 +123,28 @@ describe('AuthController', () => {
         photoUrl: '',
       };
       const mockReq = { user: newProfile } as unknown as Request;
-      const mockRes = { redirect: jest.fn() } as unknown as Response;
+      const mockRes = {
+        redirect: jest.fn(),
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
 
       await controller.googleCallback(mockReq, mockRes);
 
       expect(authService.validateOrCreateUser).toHaveBeenCalledWith(newProfile);
       expect(authService.signToken).toHaveBeenCalledWith(newCustomer);
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'token',
+        'new.user.token',
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'none',
+          secure: true,
+          maxAge: expect.any(Number),
+        }),
+      );
       expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/callback?token=new.user.token',
+        'http://localhost:3000/auth/callback',
       );
     });
 
@@ -125,28 +153,49 @@ describe('AuthController', () => {
       authService.signToken.mockReturnValue(mockToken);
 
       const mockReq = { user: mockGoogleProfile } as unknown as Request;
-      const mockRes = { redirect: jest.fn() } as unknown as Response;
+      const mockRes = {
+        redirect: jest.fn(),
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
 
       await controller.googleCallback(mockReq, mockRes);
 
       expect(authService.validateOrCreateUser).toHaveBeenCalledWith(mockGoogleProfile);
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'token',
+        mockToken,
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'none',
+          secure: true,
+          maxAge: expect.any(Number),
+        }),
+      );
       expect(mockRes.redirect).toHaveBeenCalledWith(
-        `http://localhost:3000/auth/callback?token=${mockToken}`,
+        'http://localhost:3000/auth/callback',
       );
     });
 
-    it('should redirect include token as query parameter with correct frontend URL http://localhost:3000/auth/callback?token=<TOKEN>', async () => {
+    it('should set HTTP-only cookie and redirect without token in URL', async () => {
       authService.validateOrCreateUser.mockResolvedValue(mockCustomer);
       authService.signToken.mockReturnValue(mockToken);
 
       const mockReq = { user: mockGoogleProfile } as unknown as Request;
-      const mockRes = { redirect: jest.fn() } as unknown as Response;
+      const mockRes = {
+        redirect: jest.fn(),
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
 
       await controller.googleCallback(mockReq, mockRes);
 
+      expect(mockRes.cookie).toHaveBeenCalled();
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:3000/auth/callback',
+      );
       const redirectUrl = (mockRes.redirect as jest.Mock).mock.calls[0][0];
-      expect(redirectUrl).toBe(`http://localhost:3000/auth/callback?token=${mockToken}`);
-      expect(redirectUrl).toContain('http://localhost:3000/auth/callback?token=');
+      expect(redirectUrl).not.toContain('token=');
     });
 
     it('should delegate defaults (role "customer", location "West Malaysia") to AuthService for new users', async () => {
@@ -160,7 +209,11 @@ describe('AuthController', () => {
       authService.signToken.mockReturnValue(mockToken);
 
       const mockReq = { user: mockGoogleProfile } as unknown as Request;
-      const mockRes = { redirect: jest.fn() } as unknown as Response;
+      const mockRes = {
+        redirect: jest.fn(),
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
 
       await controller.googleCallback(mockReq, mockRes);
 
@@ -168,6 +221,22 @@ describe('AuthController', () => {
       const signTokenArg = (authService.signToken as jest.Mock).mock.calls[0][0];
       expect(signTokenArg.role).toBe(CustomerRole.CUSTOMER);
       expect(signTokenArg.location).toBe(CustomerLocation.WEST_MALAYSIA);
+    });
+  });
+
+  describe('POST /api/auth/logout', () => {
+    it('should clear the token cookie and return success message', async () => {
+      const mockRes = {
+        clearCookie: jest.fn(),
+        json: jest.fn(),
+      } as unknown as Response;
+
+      await controller.logout(mockRes);
+
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('token');
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Logged out successfully',
+      });
     });
   });
 
@@ -217,6 +286,88 @@ describe('AuthController', () => {
         (g: any) => g instanceof JwtAuthGuard || g === JwtAuthGuard,
       );
       expect(hasJwtGuard).toBe(true);
+    });
+  });
+
+  describe('cookie options (fix: cross-origin axios)', () => {
+    it('should set cookie with sameSite: "none"', async () => {
+      authService.validateOrCreateUser.mockResolvedValue(mockCustomer);
+      authService.signToken.mockReturnValue(mockToken);
+
+      const mockReq = { user: mockGoogleProfile } as unknown as Request;
+      const mockRes = {
+        redirect: jest.fn(),
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
+
+      await controller.googleCallback(mockReq, mockRes);
+
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'token',
+        mockToken,
+        expect.objectContaining({ sameSite: 'none' }),
+      );
+    });
+
+    it('should set cookie with secure: true (always, even in dev)', async () => {
+      authService.validateOrCreateUser.mockResolvedValue(mockCustomer);
+      authService.signToken.mockReturnValue(mockToken);
+
+      const mockReq = { user: mockGoogleProfile } as unknown as Request;
+      const mockRes = {
+        redirect: jest.fn(),
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
+
+      await controller.googleCallback(mockReq, mockRes);
+
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'token',
+        mockToken,
+        expect.objectContaining({ secure: true }),
+      );
+    });
+
+    it('should set cookie with httpOnly: true', async () => {
+      authService.validateOrCreateUser.mockResolvedValue(mockCustomer);
+      authService.signToken.mockReturnValue(mockToken);
+
+      const mockReq = { user: mockGoogleProfile } as unknown as Request;
+      const mockRes = {
+        redirect: jest.fn(),
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
+
+      await controller.googleCallback(mockReq, mockRes);
+
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'token',
+        mockToken,
+        expect.objectContaining({ httpOnly: true }),
+      );
+    });
+
+    it('should set cookie maxAge to 7 days (604800000 ms)', async () => {
+      authService.validateOrCreateUser.mockResolvedValue(mockCustomer);
+      authService.signToken.mockReturnValue(mockToken);
+
+      const mockReq = { user: mockGoogleProfile } as unknown as Request;
+      const mockRes = {
+        redirect: jest.fn(),
+        cookie: jest.fn(),
+        clearCookie: jest.fn(),
+      } as unknown as Response;
+
+      await controller.googleCallback(mockReq, mockRes);
+
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'token',
+        mockToken,
+        expect.objectContaining({ maxAge: 604800000 }),
+      );
     });
   });
 });

@@ -1,16 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 
-// Mock jwt-decode before importing authSlice (module-level init calls jwtDecode)
-jest.mock('jwt-decode', () => ({
-  __esModule: true,
-  jwtDecode: jest.fn(),
-}));
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { jwtDecode } = require('jwt-decode') as { jwtDecode: jest.Mock };
-
-// Import once at module level — getInitialState() runs here with the mock active
-import authReducer, { loginStart, loginSuccess, loginFailure, logout, clearError, getInitialState } from './authSlice';
+import authReducer, { loginStart, loginSuccess, loginFailure, logout, clearError } from './authSlice';
 
 const createStore = () => configureStore({ reducer: { auth: authReducer } });
 
@@ -21,53 +11,9 @@ describe('authSlice', () => {
   });
 
   describe('initial state', () => {
-    it('should have initial state { user: null, token: null, isLoading: false, error: null } when no token in localStorage', () => {
-      const state = getInitialState();
-      expect(state).toEqual({
-        user: null,
-        token: null,
-        isLoading: false,
-        error: null,
-      });
-    });
-
-    it('should restore user and token from valid JWT in localStorage', () => {
-      const validToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c3JfMTIzIiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsImZpcnN0TmFtZSI6IlRlc3QiLCJsYXN0TmFtZSI6IlVzZXIiLCJyb2xlIjoiY3VzdG9tZXIifQ.mock';
-      localStorage.setItem('token', validToken);
-
-      (jwtDecode as jest.Mock).mockReturnValue({
-        sub: 'usr_123',
-        email: 'test@gmail.com',
-        firstName: 'Test',
-        lastName: 'User',
-        photoUrl: '',
-        role: 'customer',
-      });
-
-      const state = getInitialState();
-
-      expect(state.token).toBe(validToken);
-      expect(state.user).toEqual({
-        id: 'usr_123',
-        email: 'test@gmail.com',
-        firstName: 'Test',
-        lastName: 'User',
-        role: 'customer',
-      });
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBeNull();
-    });
-
-    it('should clear invalid token from localStorage and return empty state', () => {
-      localStorage.setItem('token', 'invalid-token');
-      (jwtDecode as jest.Mock).mockImplementation(() => {
-        throw new Error('Invalid token');
-      });
-
-      const state = getInitialState();
-
-      expect(localStorage.getItem('token')).toBeNull();
-      expect(state).toEqual({
+    it('should have initial state { user: null, token: null, isLoading: false, error: null }', () => {
+      const store = createStore();
+      expect(store.getState().auth).toEqual({
         user: null,
         token: null,
         isLoading: false,
@@ -108,15 +54,15 @@ describe('authSlice', () => {
     };
     const mockToken = 'eyJhbGciOiJIUzI1NiJ9.mock.token';
 
-    it('should set user, token, isLoading: false, and error: null', () => {
+    it('should set user, token: null, isLoading: false, and error: null', () => {
       const store = createStore();
       store.dispatch(loginStart());
 
-      store.dispatch(loginSuccess({ token: mockToken, user: mockUser }));
+      store.dispatch(loginSuccess({ user: mockUser }));
 
       const state = store.getState().auth;
       expect(state.user).toEqual(mockUser);
-      expect(state.token).toBe(mockToken);
+      expect(state.token).toBeNull();
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -124,7 +70,7 @@ describe('authSlice', () => {
     it('should store correct user shape: { id, email, firstName, lastName, role }', () => {
       const store = createStore();
 
-      store.dispatch(loginSuccess({ token: mockToken, user: mockUser }));
+      store.dispatch(loginSuccess({ user: mockUser }));
 
       const user = store.getState().auth.user!;
       expect(user.id).toBe('usr_abc123');
@@ -132,23 +78,6 @@ describe('authSlice', () => {
       expect(user.firstName).toBe('Test');
       expect(user.lastName).toBe('User');
       expect(user.role).toBe('customer');
-    });
-
-    it('should persist token to localStorage', () => {
-      const store = createStore();
-
-      store.dispatch(loginSuccess({ token: mockToken, user: mockUser }));
-
-      expect(localStorage.getItem('token')).toBe(mockToken);
-    });
-
-    it('should store token in state matching input', () => {
-      const store = createStore();
-      const token = 'custom.jwt.token.value';
-
-      store.dispatch(loginSuccess({ token, user: mockUser }));
-
-      expect(store.getState().auth.token).toBe(token);
     });
   });
 
@@ -162,7 +91,7 @@ describe('authSlice', () => {
         lastName: 'User',
         role: 'customer',
       };
-      store.dispatch(loginSuccess({ token: 'existing-token', user: mockUser }));
+      store.dispatch(loginSuccess({ user: mockUser }));
       store.dispatch(loginStart());
 
       store.dispatch(loginFailure('Invalid credentials'));
@@ -171,7 +100,7 @@ describe('authSlice', () => {
       expect(state.error).toBe('Invalid credentials');
       expect(state.isLoading).toBe(false);
       expect(state.user).toEqual(mockUser);
-      expect(state.token).toBe('existing-token');
+      expect(state.token).toBeNull();  // token is always null (HTTP-only cookie)
     });
 
     it('should store the error string passed in payload', () => {
@@ -193,7 +122,7 @@ describe('authSlice', () => {
         lastName: 'User',
         role: 'customer',
       };
-      store.dispatch(loginSuccess({ token: 'some-token', user: mockUser }));
+      store.dispatch(loginSuccess({ user: mockUser }));
       store.dispatch(loginFailure('some error'));
 
       store.dispatch(logout());
@@ -204,23 +133,6 @@ describe('authSlice', () => {
         isLoading: false,
         error: null,
       });
-    });
-
-    it('should remove token from localStorage', () => {
-      const store = createStore();
-      const mockUser = {
-        id: 'usr_abc123',
-        email: 'test@gmail.com',
-        firstName: 'Test',
-        lastName: 'User',
-        role: 'customer',
-      };
-      store.dispatch(loginSuccess({ token: 'some-token', user: mockUser }));
-      expect(localStorage.getItem('token')).toBe('some-token');
-
-      store.dispatch(logout());
-
-      expect(localStorage.getItem('token')).toBeNull();
     });
   });
 
@@ -234,7 +146,7 @@ describe('authSlice', () => {
         lastName: 'User',
         role: 'customer',
       };
-      store.dispatch(loginSuccess({ token: 'active-token', user: mockUser }));
+      store.dispatch(loginSuccess({ user: mockUser }));
       store.dispatch(loginFailure('temporary.error'));
 
       const before = store.getState().auth;
@@ -245,7 +157,7 @@ describe('authSlice', () => {
       const after = store.getState().auth;
       expect(after.error).toBeNull();
       expect(after.user).toEqual(mockUser);
-      expect(after.token).toBe('active-token');
+      expect(after.token).toBeNull();  // token is always null (HTTP-only cookie)
       expect(after.isLoading).toBe(false);
     });
   });

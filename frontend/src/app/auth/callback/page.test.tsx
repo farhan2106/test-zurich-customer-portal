@@ -1,17 +1,12 @@
 import React from 'react';
 import { render, screen, waitFor } from '@/test-utils';
 import * as nextNavigation from 'next/navigation';
-import { jwtDecode } from 'jwt-decode';
+import apiClient from '@/services/api-client';
 
-// Mock next/navigation
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    back: jest.fn(),
-    forward: jest.fn(),
-    refresh: jest.fn(),
-    prefetch: jest.fn(),
+    push: jest.fn(), replace: jest.fn(), back: jest.fn(), forward: jest.fn(),
+    refresh: jest.fn(), prefetch: jest.fn(),
   })),
   usePathname: jest.fn(() => '/auth/callback'),
   useSearchParams: jest.fn(() => new URLSearchParams()),
@@ -19,142 +14,91 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }));
 
-// Mock jwt-decode with explicit factory for v4 compatibility
-jest.mock('jwt-decode', () => ({
+jest.mock('@/services/api-client', () => ({
   __esModule: true,
-  jwtDecode: jest.fn(),
+  default: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    patch: jest.fn(),
+    delete: jest.fn(),
+    interceptors: {
+      request: { use: jest.fn() },
+      response: { use: jest.fn() },
+    },
+  },
 }));
-const mockedJwtDecode = jwtDecode as unknown as jest.Mock;
 
 // Import the page component (will fail until implemented)
 import CallbackPage from '@/app/auth/callback/page';
 
-const mockDecodedToken = {
-  sub: 'usr_1',
+const mockProfileResponse = {
+  id: 'usr_1',
   email: 'test@example.com',
   firstName: 'Test',
   lastName: 'User',
   role: 'customer',
-  photoUrl: '',
 };
 
 describe('Auth Callback Page', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    localStorage.clear();
   });
 
-  it('reads token from URL query param ?token=<JWT>', () => {
-    (nextNavigation.useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams({ token: 'mock-jwt-token' })
-    );
-    mockedJwtDecode.mockReturnValue(mockDecodedToken);
-
+  it('calls GET /auth/profile to fetch user info', async () => {
+    apiClient.get.mockResolvedValue({ data: mockProfileResponse });
     render(<CallbackPage />);
-
-    expect(nextNavigation.useSearchParams).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(apiClient.get).toHaveBeenCalledWith('/auth/profile');
+    });
   });
 
-  it('decodes JWT using jwt-decode to extract user info', () => {
-    (nextNavigation.useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams({ token: 'mock-jwt-token' })
-    );
-    mockedJwtDecode.mockReturnValue(mockDecodedToken);
-
+  it('shows "Signing you in..." loading message with spinner', () => {
+    apiClient.get.mockReturnValue(new Promise(() => {}));
     render(<CallbackPage />);
-
-    expect(mockedJwtDecode).toHaveBeenCalledWith('mock-jwt-token');
+    expect(screen.getByText(/signing you in\.\.\./i)).toBeInTheDocument();
   });
 
-  it('stores token in localStorage', () => {
-    (nextNavigation.useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams({ token: 'mock-jwt-token' })
-    );
-    mockedJwtDecode.mockReturnValue(mockDecodedToken);
-
-    render(<CallbackPage />);
-
-    expect(localStorage.getItem('token')).toBe('mock-jwt-token');
-  });
-
-  it('dispatches loginSuccess(token, user) to Redux', () => {
-    (nextNavigation.useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams({ token: 'mock-jwt-token' })
-    );
-    mockedJwtDecode.mockReturnValue(mockDecodedToken);
-
+  it('dispatches loginSuccess with user profile on success', async () => {
+    apiClient.get.mockResolvedValue({ data: mockProfileResponse });
     const { store } = render(<CallbackPage />, {
       preloadedState: {
         auth: { user: null, token: null, isLoading: false, error: null },
       },
     });
 
-    expect(store.getState().auth.token).toBe('mock-jwt-token');
-    expect(store.getState().auth.user).toEqual({
-      id: 'usr_1',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      role: 'customer',
+    await waitFor(() => {
+      expect(store.getState().auth.user).toEqual({
+        id: 'usr_1',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        role: 'customer',
+      });
     });
   });
 
-  it('shows "Signing you in..." loading message with spinner', () => {
-    (nextNavigation.useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams({ token: 'mock-jwt-token' })
-    );
-    mockedJwtDecode.mockReturnValue(mockDecodedToken);
-
+  it('redirects admin (role="admin") to /admin/customers', async () => {
+    apiClient.get.mockResolvedValue({ data: { ...mockProfileResponse, role: 'admin' } });
     render(<CallbackPage />);
-
-    expect(screen.getByText(/signing you in\.\.\./i)).toBeInTheDocument();
-  });
-
-  it('redirects admin (role="admin") to /admin/customers', () => {
-    (nextNavigation.useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams({ token: 'mock-jwt-token' })
-    );
-    mockedJwtDecode.mockReturnValue({
-      ...mockDecodedToken,
-      role: 'admin',
+    await waitFor(() => {
+      expect(nextNavigation.redirect).toHaveBeenCalledWith('/admin/customers');
     });
-
-    render(<CallbackPage />);
-
-    expect(nextNavigation.redirect).toHaveBeenCalledWith('/admin/customers');
   });
 
-  it('redirects customer (role="customer") to /dashboard', () => {
-    (nextNavigation.useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams({ token: 'mock-jwt-token' })
-    );
-    mockedJwtDecode.mockReturnValue(mockDecodedToken);
-
+  it('redirects customer (role="customer") to /dashboard', async () => {
+    apiClient.get.mockResolvedValue({ data: mockProfileResponse });
     render(<CallbackPage />);
-
-    expect(nextNavigation.redirect).toHaveBeenCalledWith('/dashboard');
-  });
-
-  it('redirects to /login?error=auth_failed when no token in URL', () => {
-    (nextNavigation.useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams({})
-    );
-
-    render(<CallbackPage />);
-
-    expect(nextNavigation.redirect).toHaveBeenCalledWith('/login?error=auth_failed');
-  });
-
-  it('redirects to /login?error=auth_failed when jwt-decode throws', () => {
-    (nextNavigation.useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams({ token: 'invalid-token' })
-    );
-    mockedJwtDecode.mockImplementation(() => {
-      throw new Error('Invalid token');
+    await waitFor(() => {
+      expect(nextNavigation.redirect).toHaveBeenCalledWith('/dashboard');
     });
+  });
 
+  it('redirects to /?error=auth_failed when profile fetch fails', async () => {
+    apiClient.get.mockRejectedValue(new Error('Unauthorized'));
     render(<CallbackPage />);
-
-    expect(nextNavigation.redirect).toHaveBeenCalledWith('/login?error=auth_failed');
+    await waitFor(() => {
+      expect(nextNavigation.redirect).toHaveBeenCalledWith('/?error=auth_failed');
+    });
   });
 });

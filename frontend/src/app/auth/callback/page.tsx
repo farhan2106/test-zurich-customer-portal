@@ -1,58 +1,46 @@
 'use client';
 
 import { Suspense, useEffect } from 'react';
-import { useRouter, useSearchParams, redirect } from 'next/navigation';
+import { useRouter, redirect } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
-import { loginSuccess } from '@/store/slices/authSlice';
-import { jwtDecode } from 'jwt-decode';
-
-interface JwtPayload {
-  sub: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  photoUrl: string;
-  role: string;
-  iat?: number;
-  exp?: number;
-}
+import { loginSuccess, loginFailure } from '@/store/slices/authSlice';
+import apiClient from '@/services/api-client';
 
 function CallbackContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-  const token = searchParams.get('token');
 
   useEffect(() => {
-    if (!token) {
-      redirect('/login?error=auth_failed');
-      return;
-    }
+    const fetchProfile = async () => {
+      dispatch({ type: 'auth/loginStart' });
+      try {
+        const response = await apiClient.get('/auth/profile');
+        const profile = response.data;
 
-    try {
-      const payload = jwtDecode<JwtPayload>(token);
+        dispatch(loginSuccess({
+          user: {
+            id: profile.id,
+            email: profile.email,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            role: profile.role,
+          },
+        }));
 
-      const user = {
-        id: payload.sub,
-        email: payload.email,
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        role: payload.role,
-      };
-
-      localStorage.setItem('token', token);
-      dispatch(loginSuccess({ token, user }));
-
-      // Redirect based on role
-      if (payload.role === 'admin') {
-        redirect('/admin/customers');
-      } else {
-        redirect('/dashboard');
+        // Redirect based on role
+        if (profile.role === 'admin') {
+          redirect('/admin/customers');
+        } else {
+          redirect('/dashboard');
+        }
+      } catch {
+        dispatch(loginFailure('Authentication failed'));
+        redirect('/?error=auth_failed');
       }
-    } catch {
-      redirect('/login?error=auth_failed');
-    }
-  }, [token, dispatch]);
+    };
+
+    fetchProfile();
+  }, [dispatch]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-base-200">

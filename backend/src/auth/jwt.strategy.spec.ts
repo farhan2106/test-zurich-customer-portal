@@ -1,5 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtStrategy, JwtPayload, JwtUser } from './jwt.strategy';
+import { ExtractJwt } from 'passport-jwt';
+import { Request } from 'express';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
@@ -117,6 +119,84 @@ describe('JwtStrategy', () => {
       const result = await strategy.validate(payload);
 
       expect(result.photoUrl).toBeNull();
+    });
+  });
+
+  describe('jwtFromRequest (cookie extraction)', () => {
+    it('should extract JWT from Bearer header when present', () => {
+      const extractor = ExtractJwt.fromAuthHeaderAsBearerToken();
+      const mockReq = {
+        headers: {
+          authorization: 'Bearer cookie-extracted-token',
+        },
+      } as unknown as Request;
+
+      const token = extractor(mockReq);
+
+      expect(token).toBe('cookie-extracted-token');
+    });
+
+    it('should return null when no Bearer header is present', () => {
+      const extractor = ExtractJwt.fromAuthHeaderAsBearerToken();
+      const mockReq = {
+        headers: {},
+      } as unknown as Request;
+
+      const token = extractor(mockReq);
+
+      expect(token).toBeNull();
+    });
+
+    it('should use a custom extractor that reads from cookies as fallback when no Bearer header', () => {
+      const extractors = [
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (req: Request) => req?.cookies?.token ?? null,
+      ];
+      const combinedExtractor = ExtractJwt.fromExtractors(extractors);
+
+      const mockReq = {
+        headers: {},
+        cookies: { token: 'cookie-jwt-token' },
+      } as unknown as Request;
+
+      const token = combinedExtractor(mockReq);
+
+      expect(token).toBe('cookie-jwt-token');
+    });
+
+    it('should prefer Bearer header over cookie when both are present', () => {
+      const extractors = [
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (req: Request) => req?.cookies?.token ?? null,
+      ];
+      const combinedExtractor = ExtractJwt.fromExtractors(extractors);
+
+      const mockReq = {
+        headers: {
+          authorization: 'Bearer header-token',
+        },
+        cookies: { token: 'cookie-token' },
+      } as unknown as Request;
+
+      const token = combinedExtractor(mockReq);
+
+      expect(token).toBe('header-token');
+    });
+
+    it('should return null when neither Bearer header nor cookie token exist', () => {
+      const extractors = [
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (req: Request) => req?.cookies?.token ?? null,
+      ];
+      const combinedExtractor = ExtractJwt.fromExtractors(extractors);
+
+      const mockReq = {
+        headers: {},
+      } as unknown as Request;
+
+      const token = combinedExtractor(mockReq);
+
+      expect(token).toBeNull();
     });
   });
 });

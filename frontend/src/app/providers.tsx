@@ -1,13 +1,48 @@
 'use client';
 
-import { Provider } from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
 import { store } from '@/store';
 import { ToastProvider } from '@/components/ui';
+import { useEffect } from 'react';
+import apiClient from '@/services/api-client';
+import { loginSuccess } from '@/store/slices/authSlice';
+
+function AuthInitializer({ children }: { children: React.ReactNode }) {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const response = await apiClient.get('/auth/profile');
+        const profile = response.data;
+        dispatch(loginSuccess({
+          user: {
+            id: profile.id,
+            email: profile.email,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            role: profile.role,
+          },
+        }));
+      } catch {
+        // No valid cookie — user is not authenticated. Do nothing.
+      }
+    };
+
+    initAuth();
+  }, []);  // Only on mount, not on pathname changes
+
+  return <>{children}</>;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        <AuthInitializer>
+          {children}
+        </AuthInitializer>
+      </ToastProvider>
     </Provider>
   );
 }

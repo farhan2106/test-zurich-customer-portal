@@ -25,7 +25,7 @@ describe('Navbar', () => {
   const customerPreloadedState = {
     auth: {
       user: { id: '1', email: 'a@b.com', firstName: 'Test', lastName: 'User', role: 'customer' },
-      token: 'test-token',
+      token: null,
       isLoading: false,
       error: null,
     },
@@ -34,7 +34,7 @@ describe('Navbar', () => {
   const adminPreloadedState = {
     auth: {
       user: { id: '1', email: 'a@b.com', firstName: 'Test', lastName: 'User', role: 'admin' },
-      token: 'test-token',
+      token: null,
       isLoading: false,
       error: null,
     },

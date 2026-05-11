@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { jwtDecode } from 'jwt-decode';
 
 interface User {
   id: string;
@@ -11,53 +10,17 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
+  token: string | null;  // Kept for compatibility, always null (JWT in HTTP-only cookie)
   isLoading: boolean;
   error: string | null;
 }
 
-interface JwtPayload {
-  sub: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  photoUrl: string;
-  role: string;
-}
-
-const getInitialState = (): AuthState => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = jwtDecode<JwtPayload>(token);
-        return {
-          user: {
-            id: payload.sub,
-            email: payload.email,
-            firstName: payload.firstName,
-            lastName: payload.lastName,
-            role: payload.role,
-          },
-          token,
-          isLoading: false,
-          error: null,
-        };
-      } catch {
-        // Invalid token — clear it
-        localStorage.removeItem('token');
-      }
-    }
-  }
-  return {
-    user: null,
-    token: null,
-    isLoading: false,
-    error: null,
-  };
+const initialState: AuthState = {
+  user: null,
+  token: null,
+  isLoading: false,
+  error: null,
 };
-
-const initialState: AuthState = getInitialState();
 
 const authSlice = createSlice({
   name: 'auth',
@@ -67,15 +30,11 @@ const authSlice = createSlice({
       state.isLoading = true;
       state.error = null;
     },
-    loginSuccess: (state, action: PayloadAction<{ token: string; user: User }>) => {
-      const { token, user } = action.payload;
-      state.user = user;
-      state.token = token;
+    loginSuccess: (state, action: PayloadAction<{ user: User }>) => {
+      state.user = action.payload.user;
+      state.token = null;  // Token is in HTTP-only cookie, not in Redux
       state.isLoading = false;
       state.error = null;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', token);
-      }
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.isLoading = false;
@@ -86,9 +45,6 @@ const authSlice = createSlice({
       state.token = null;
       state.isLoading = false;
       state.error = null;
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
     },
     clearError: (state) => {
       state.error = null;
@@ -97,5 +53,4 @@ const authSlice = createSlice({
 });
 
 export const { loginStart, loginSuccess, loginFailure, logout, clearError } = authSlice.actions;
-export { getInitialState };
 export default authSlice.reducer;

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
 import { useState } from 'react';
+import apiClient from '@/services/api-client';
 
 interface NavLink {
   label: string;
@@ -32,9 +33,14 @@ export function Navbar() {
 
   const isActive = (href: string) => pathname === href;
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // Continue with logout even if backend call fails
+    }
     dispatch(logout());
-    router.push('/login');
+    router.push('/');
   };
 
   return (

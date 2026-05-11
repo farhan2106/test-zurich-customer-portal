@@ -39,14 +39,14 @@ import ProductsPage from '@/app/products/page';
 const mockProducts = [
   {
     id: '1',
-    code: 4000,
+    productCode: 4000,
     name: 'Auto Insurance',
     description: 'Comprehensive auto coverage for all vehicle types',
     basePremium: 500.0,
   },
   {
     id: '2',
-    code: 5000,
+    productCode: 5000,
     name: 'Property Insurance',
     description: 'Protect your home and property against damage and theft',
     basePremium: 1200.0,
