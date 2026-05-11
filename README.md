@@ -59,3 +59,15 @@ docker compose up -d
 - **Database Config** → `backend/src/config/`
 - **UI Components** → `frontend/src/`
 - **Deployment Config** → `devops/`
+
+---
+
+## Screenshots
+
+### Dashboard
+
+![Dashboard](1.png)
+
+### Swagger API Docs
+
+![Swagger API Docs](2.png)
