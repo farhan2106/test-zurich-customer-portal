@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import policyReducer from './slices/policySlice';
 import claimReducer from './slices/claimSlice';
 import adminReducer from './slices/adminSlice';
+import productReducer from './slices/productSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     policy: policyReducer,
     claim: claimReducer,
     admin: adminReducer,
+    product: productReducer,
   },
   devTools: process.env.NODE_ENV !== 'production',
 });

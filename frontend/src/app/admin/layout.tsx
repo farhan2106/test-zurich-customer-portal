@@ -7,31 +7,28 @@ import { Navbar } from '@/components/layout';
 import { Spinner } from '@/components/ui';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, token, isLoading } = useAppSelector((state) => state.auth);
+  const { user, isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     document.title = 'Admin — Zurich';
   }, []);
 
-  // Loading state
-  if (isLoading || !token) {
+  // Auth check still initializing
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Spinner size="lg" label="Loading" />
+        <Spinner size="lg" label="Signing in..." />
       </div>
     );
   }
 
-  // No user after token loaded
+  // Not authenticated — redirect to home
   if (!user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner size="lg" label="Loading profile" />
-      </div>
-    );
+    redirect('/');
+    return null;
   }
 
-  // Role check: non-admin redirect
+  // Not admin role — redirect to dashboard
   if (user.role !== 'admin') {
     redirect('/dashboard');
     return null;

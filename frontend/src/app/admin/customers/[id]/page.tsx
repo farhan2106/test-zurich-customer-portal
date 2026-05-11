@@ -10,7 +10,7 @@ import {
   selectCustomerById,
   selectAdminLoadingState,
 } from '@/store/slices/adminSlice';
-import type { UpdateCustomerDto } from '@/services/admin.service';
+import type { UpdateCustomerDto, AdminCustomerDetail } from '@/services/admin.service';
 import { Skeleton, Button, Badge } from '@/components/ui';
 
 type TabType = 'profile' | 'policies' | 'claims';
@@ -97,6 +97,8 @@ export default function AdminCustomerDetailPage() {
       </div>
     );
   }
+
+  const detailCustomer = customer as AdminCustomerDetail;
 
   return (
     <div className="space-y-6">
@@ -263,7 +265,7 @@ export default function AdminCustomerDetailPage() {
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-lg mb-4">Policies</h2>
-            {customer.policies && customer.policies.length > 0 ? (
+            {detailCustomer.policies && detailCustomer.policies.length > 0 ? (
               <table className="table table-zebra w-full">
                 <thead>
                   <tr>
@@ -275,7 +277,7 @@ export default function AdminCustomerDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {customer.policies.map((policy) => (
+                  {detailCustomer.policies.map((policy) => (
                     <tr key={policy.id}>
                       <td>{policy.policyNumber}</td>
                       <td>
@@ -302,7 +304,7 @@ export default function AdminCustomerDetailPage() {
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-lg mb-4">Claims</h2>
-            {customer.claims && customer.claims.length > 0 ? (
+            {detailCustomer.claims && detailCustomer.claims.length > 0 ? (
               <table className="table table-zebra w-full">
                 <thead>
                   <tr>
@@ -313,7 +315,7 @@ export default function AdminCustomerDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {customer.claims.map((claim) => (
+                  {detailCustomer.claims.map((claim) => (
                     <tr key={claim.id}>
                       <td>{claim.claimNumber}</td>
                       <td>{claim.type}</td>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@/test-utils';
+import { render, screen, waitFor, act, fireEvent } from '@/test-utils';
 import * as adminService from '@/services/admin.service';
 
 // Mock the admin service
@@ -250,6 +250,396 @@ describe('Admin Customers List Page', () => {
     await waitFor(() => {
       // Verify the page renders — admin layout handles role check at parent level
       expect(screen.getByRole('main')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('Premium Range Search', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Premium range presets', () => {
+    it('renders preset buttons for premium ranges', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /under 500/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /500.*1,?000/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /1,?000.*5,?000/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /5,?000\+/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^all$/i })).toBeInTheDocument();
+      });
+    });
+
+    it('clicking "Under 500" sets premiumMax=500 and clears premiumMin', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        screen.getByRole('button', { name: /under 500/i }).click();
+      });
+
+      await waitFor(() => {
+        const minInput = screen.getByLabelText('Minimum premium paid') as HTMLInputElement;
+        const maxInput = screen.getByLabelText('Maximum premium paid') as HTMLInputElement;
+        expect(minInput.value).toBe('');
+        expect(maxInput.value).toBe('500');
+      });
+
+      await waitFor(() => {
+        expect(mockedAdminService.getCustomers).toHaveBeenCalledWith(
+          expect.objectContaining({ premiumMax: 500, page: 1, limit: 20 })
+        );
+      });
+    });
+
+    it('clicking "500–1,000" sets premiumMin=500 and premiumMax=1000', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        screen.getByRole('button', { name: /500.*1,?000/i }).click();
+      });
+
+      await waitFor(() => {
+        const minInput = screen.getByLabelText('Minimum premium paid') as HTMLInputElement;
+        const maxInput = screen.getByLabelText('Maximum premium paid') as HTMLInputElement;
+        expect(minInput.value).toBe('500');
+        expect(maxInput.value).toBe('1000');
+      });
+
+      await waitFor(() => {
+        expect(mockedAdminService.getCustomers).toHaveBeenCalledWith(
+          expect.objectContaining({ premiumMin: 500, premiumMax: 1000, page: 1, limit: 20 })
+        );
+      });
+    });
+
+    it('clicking "1,000–5,000" sets premiumMin=1000 and premiumMax=5000', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        screen.getByRole('button', { name: /1,?000.*5,?000/i }).click();
+      });
+
+      await waitFor(() => {
+        const minInput = screen.getByLabelText('Minimum premium paid') as HTMLInputElement;
+        const maxInput = screen.getByLabelText('Maximum premium paid') as HTMLInputElement;
+        expect(minInput.value).toBe('1000');
+        expect(maxInput.value).toBe('5000');
+      });
+
+      await waitFor(() => {
+        expect(mockedAdminService.getCustomers).toHaveBeenCalledWith(
+          expect.objectContaining({ premiumMin: 1000, premiumMax: 5000, page: 1, limit: 20 })
+        );
+      });
+    });
+
+    it('clicking "5,000+" sets premiumMin=5000 and clears premiumMax', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        screen.getByRole('button', { name: /5,?000\+/i }).click();
+      });
+
+      await waitFor(() => {
+        const minInput = screen.getByLabelText('Minimum premium paid') as HTMLInputElement;
+        const maxInput = screen.getByLabelText('Maximum premium paid') as HTMLInputElement;
+        expect(minInput.value).toBe('5000');
+        expect(maxInput.value).toBe('');
+      });
+
+      await waitFor(() => {
+        expect(mockedAdminService.getCustomers).toHaveBeenCalledWith(
+          expect.objectContaining({ premiumMin: 5000, page: 1, limit: 20 })
+        );
+      });
+    });
+
+    it('clicking "All" clears both premiumMin and premiumMax', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      // First set a range
+      await waitFor(() => {
+        screen.getByRole('button', { name: /500.*1,?000/i }).click();
+      });
+
+      await waitFor(() => {
+        const minInput = screen.getByLabelText('Minimum premium paid') as HTMLInputElement;
+        expect(minInput.value).toBe('500');
+      });
+
+      // Then clear with "All"
+      await act(async () => {
+        screen.getByRole('button', { name: /^all$/i }).click();
+      });
+
+      await waitFor(() => {
+        const minInput = screen.getByLabelText('Minimum premium paid') as HTMLInputElement;
+        const maxInput = screen.getByLabelText('Maximum premium paid') as HTMLInputElement;
+        expect(minInput.value).toBe('');
+        expect(maxInput.value).toBe('');
+      });
+    });
+
+    it('preset buttons do not affect other filter inputs', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      // Set a firstName filter
+      await waitFor(() => {
+        const firstNameInput = screen.getByPlaceholderText('First name...');
+        fireEvent.change(firstNameInput, { target: { value: 'John' } });
+      });
+
+      // Click a preset
+      await act(async () => {
+        screen.getByRole('button', { name: /under 500/i }).click();
+      });
+
+      // Verify firstName is still set
+      await waitFor(() => {
+        const firstNameInput = screen.getByPlaceholderText('First name...') as HTMLInputElement;
+        expect(firstNameInput.value).toBe('John');
+      });
+    });
+  });
+
+  describe('Premium range inputs', () => {
+    it('renders premium inputs within a labeled "Premium Range" group', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        const premiumRangeLabel = screen.getByText(/premium range/i);
+        expect(premiumRangeLabel).toBeInTheDocument();
+      });
+    });
+
+    it('does not allow negative values in premium inputs', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        const minInput = screen.getByLabelText('Minimum premium paid') as HTMLInputElement;
+        const maxInput = screen.getByLabelText('Maximum premium paid') as HTMLInputElement;
+        expect(minInput.min).toBe('0');
+        expect(maxInput.min).toBe('0');
+      });
+    });
+
+    it('typing in premiumMin input updates the filter and triggers fetch', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        const minInput = screen.getByLabelText('Minimum premium paid');
+        fireEvent.change(minInput, { target: { value: '1000' } });
+      });
+
+      await waitFor(() => {
+        expect(mockedAdminService.getCustomers).toHaveBeenCalledWith(
+          expect.objectContaining({ premiumMin: 1000, page: 1, limit: 20 })
+        );
+      });
+    });
+
+    it('typing in premiumMax input updates the filter and triggers fetch', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        const maxInput = screen.getByLabelText('Maximum premium paid');
+        fireEvent.change(maxInput, { target: { value: '5000' } });
+      });
+
+      await waitFor(() => {
+        expect(mockedAdminService.getCustomers).toHaveBeenCalledWith(
+          expect.objectContaining({ premiumMax: 5000, page: 1, limit: 20 })
+        );
+      });
+    });
+  });
+
+  describe('Active premium badge', () => {
+    it('shows premium range badge when premiumMin is set', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      // Set a premium min
+      await waitFor(() => {
+        const minInput = screen.getByLabelText('Minimum premium paid');
+        fireEvent.change(minInput, { target: { value: '500' } });
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/premium.*500/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows premium range badge when premiumMax is set', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      // Set a premium max
+      await waitFor(() => {
+        const maxInput = screen.getByLabelText('Maximum premium paid');
+        fireEvent.change(maxInput, { target: { value: '1000' } });
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/premium.*1,?000/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows formatted range badge when both premiumMin and premiumMax are set', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      // Use preset button to set both
+      await waitFor(() => {
+        screen.getByRole('button', { name: /500.*1,?000/i }).click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/premium.*500.*1,?000/i)).toBeInTheDocument();
+      });
+    });
+
+    it('does not show premium badge when no premium filters are active', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      await waitFor(() => {
+        const premiumBadges = screen.queryAllByText(/premium.*rm/i);
+        expect(premiumBadges.length).toBe(0);
+      });
+    });
+
+    it('badge disappears when premium range is cleared', async () => {
+      mockedAdminService.getCustomers.mockResolvedValue({
+        data: mockCustomers,
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      });
+
+      await act(async () => {
+        render(<AdminCustomersPage />, { preloadedState: adminState });
+      });
+
+      // Set a range
+      await waitFor(() => {
+        screen.getByRole('button', { name: /under 500/i }).click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/premium.*500/i)).toBeInTheDocument();
+      });
+
+      // Clear with "All"
+      await act(async () => {
+        screen.getByRole('button', { name: /^all$/i }).click();
+      });
+
+      await waitFor(() => {
+        const premiumBadges = screen.queryAllByText(/premium.*rm/i);
+        expect(premiumBadges.length).toBe(0);
+      });
     });
   });
 });

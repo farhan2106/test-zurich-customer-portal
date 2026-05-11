@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchCustomers, selectAllCustomers, selectAdminLoadingState, selectCustomersPagination } from '@/store/slices/adminSlice';
-import { Skeleton, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 import type { CustomerFilters } from '@/services/admin.service';
 
 export default function AdminCustomersPage() {
@@ -22,7 +22,11 @@ export default function AdminCustomersPage() {
   }, [dispatch, page, filters]);
 
   const handleFilterChange = (key: keyof CustomerFilters, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value || undefined }));
+    if (key === 'premiumMin' || key === 'premiumMax') {
+      setFilters(prev => ({ ...prev, [key]: value === '' ? undefined : Number(value) }));
+    } else {
+      setFilters(prev => ({ ...prev, [key]: value || undefined }));
+    }
     setPage(1);
   };
 
@@ -33,7 +37,7 @@ export default function AdminCustomersPage() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
         <input
           type="text"
           placeholder="First name..."
@@ -79,24 +83,6 @@ export default function AdminCustomersPage() {
           <option value="admin">Admin</option>
         </select>
         <input
-          type="number"
-          placeholder="Min premium (MYR)"
-          className="input input-bordered input-sm w-full"
-          value={filters.premiumMin ?? ''}
-          min={0}
-          onChange={e => handleFilterChange('premiumMin', e.target.value)}
-          aria-label="Minimum premium paid"
-        />
-        <input
-          type="number"
-          placeholder="Max premium (MYR)"
-          className="input input-bordered input-sm w-full"
-          value={filters.premiumMax ?? ''}
-          min={0}
-          onChange={e => handleFilterChange('premiumMax', e.target.value)}
-          aria-label="Maximum premium paid"
-        />
-        <input
           type="text"
           placeholder="Search all..."
           className="input input-bordered input-sm w-full"
@@ -104,6 +90,91 @@ export default function AdminCustomersPage() {
           onChange={e => handleFilterChange('search', e.target.value)}
           aria-label="Search across name and email"
         />
+      </div>
+
+      {/* Premium Range Section */}
+      <div className="mb-6">
+        <span className="text-sm font-medium block mb-1">Premium Range</span>
+        <div className="flex gap-2 mb-3">
+          <input
+            type="number"
+            placeholder="Min"
+            className="input input-bordered input-sm w-full"
+            value={filters.premiumMin ?? ''}
+            min={0}
+            onChange={e => handleFilterChange('premiumMin', e.target.value)}
+            aria-label="Minimum premium paid"
+          />
+          <input
+            type="number"
+            placeholder="Max"
+            className="input input-bordered input-sm w-full"
+            value={filters.premiumMax ?? ''}
+            min={0}
+            onChange={e => handleFilterChange('premiumMax', e.target.value)}
+            aria-label="Maximum premium paid"
+          />
+        </div>
+
+        {/* Premium range presets */}
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="text-sm font-medium">Premium:</span>
+          <button
+            className={`btn btn-xs ${!filters.premiumMin && !filters.premiumMax ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => {
+              setFilters(prev => ({ ...prev, premiumMin: undefined, premiumMax: undefined }));
+              setPage(1);
+            }}
+          >
+            All
+          </button>
+          <button
+            className={`btn btn-xs ${filters.premiumMax === 500 && !filters.premiumMin ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => {
+              setFilters(prev => ({ ...prev, premiumMin: undefined, premiumMax: 500 }));
+              setPage(1);
+            }}
+          >
+            Under 500
+          </button>
+          <button
+            className={`btn btn-xs ${filters.premiumMin === 500 && filters.premiumMax === 1000 ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => {
+              setFilters(prev => ({ ...prev, premiumMin: 500, premiumMax: 1000 }));
+              setPage(1);
+            }}
+          >
+            RM500–RM1,000
+          </button>
+          <button
+            className={`btn btn-xs ${filters.premiumMin === 1000 && filters.premiumMax === 5000 ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => {
+              setFilters(prev => ({ ...prev, premiumMin: 1000, premiumMax: 5000 }));
+              setPage(1);
+            }}
+          >
+            RM1,000–RM5,000
+          </button>
+          <button
+            className={`btn btn-xs ${filters.premiumMin === 5000 && !filters.premiumMax ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => {
+              setFilters(prev => ({ ...prev, premiumMin: 5000, premiumMax: undefined }));
+              setPage(1);
+            }}
+          >
+            RM5,000+
+          </button>
+        </div>
+
+        {/* Active premium range badge */}
+        {(filters.premiumMin !== undefined || filters.premiumMax !== undefined) && (
+          <div className="mb-3">
+            <span className="badge badge-info gap-1">
+              Premium: {filters.premiumMin !== undefined ? `RM${filters.premiumMin}` : 'RM0'}
+              –{filters.premiumMax !== undefined ? `RM${filters.premiumMax}` : '∞'}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Loading */}

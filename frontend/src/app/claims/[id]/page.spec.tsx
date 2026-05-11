@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@/test-utils';
+import { render, screen, waitFor, act } from '@/test-utils';
 import * as claimService from '@/services/claim.service';
 
 // Mock the claim service
@@ -28,12 +28,6 @@ jest.mock('next/navigation', () => ({
   useParams: jest.fn(() => ({ id: 'clm_1' })),
   redirect: jest.fn(),
 }));
-
-// Helper to set params
-function setParams(params: Record<string, string>) {
-  const { useParams } = require('next/navigation');
-  useParams.mockReturnValue(params);
-}
 
 // Mock data
 const mockClaim = {

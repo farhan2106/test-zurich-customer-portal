@@ -108,7 +108,7 @@ describe('AuthInitializer (inside Providers)', () => {
     });
   });
 
-  it('should NOT dispatch loginFailure on 401 (silently treat as not logged in)', async () => {
+  it('should dispatch loginFailure on 401 and keep user null', async () => {
     const axiosError = {
       response: { status: 401 },
       config: { url: '/api/auth/profile' },
@@ -127,13 +127,23 @@ describe('AuthInitializer (inside Providers)', () => {
       expect(apiClient.get).toHaveBeenCalledWith('/auth/profile');
     });
 
-    // Check that loginFailure was NOT dispatched
+    // Check that loginStart was dispatched first
+    const loginStartActions = dispatchSpy.mock.calls.filter(
+      (call) => call[0]?.type === 'auth/loginStart',
+    );
+    expect(loginStartActions.length).toBeGreaterThanOrEqual(1);
+
+    // Check that loginFailure was dispatched
     const loginFailureActions = dispatchSpy.mock.calls.filter(
       (call) => call[0]?.type === 'auth/loginFailure',
     );
-    expect(loginFailureActions).toHaveLength(0);
+    expect(loginFailureActions).toHaveLength(1);
+    expect(loginFailureActions[0][0].payload).toBe('Not authenticated');
 
     // User should remain null (not authenticated)
     expect(mockStore.getState().auth.user).toBeNull();
+
+    // isLoading should be false after failure
+    expect(mockStore.getState().auth.isLoading).toBe(false);
   });
 });

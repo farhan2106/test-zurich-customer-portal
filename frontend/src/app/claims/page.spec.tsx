@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@/test-utils';
+import { render, screen, act } from '@/test-utils';
 import * as claimService from '@/services/claim.service';
 
 // Mock the claim service

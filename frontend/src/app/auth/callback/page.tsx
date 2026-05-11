@@ -1,13 +1,12 @@
 'use client';
 
 import { Suspense, useEffect } from 'react';
-import { useRouter, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
 import { loginSuccess, loginFailure } from '@/store/slices/authSlice';
 import apiClient from '@/services/api-client';
 
 function CallbackContent() {
-  const router = useRouter();
   const dispatch = useAppDispatch();
 
   useEffect(() => {

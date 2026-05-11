@@ -5,13 +5,14 @@ import { store } from '@/store';
 import { ToastProvider } from '@/components/ui';
 import { useEffect } from 'react';
 import apiClient from '@/services/api-client';
-import { loginSuccess } from '@/store/slices/authSlice';
+import { loginStart, loginSuccess, loginFailure } from '@/store/slices/authSlice';
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
 
   useEffect(() => {
     const initAuth = async () => {
+      dispatch(loginStart());
       try {
         const response = await apiClient.get('/auth/profile');
         const profile = response.data;
@@ -26,12 +27,14 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
           },
         }));
       } catch {
-        // No valid cookie — user is not authenticated. Do nothing.
+        // No valid cookie — user is not authenticated.
+        // loginFailure sets isLoading=false so guards below it can proceed
+        dispatch(loginFailure('Not authenticated'));
       }
     };
 
     initAuth();
-  }, []);  // Only on mount, not on pathname changes
+  }, [dispatch]);  // Only on mount, not on pathname changes
 
   return <>{children}</>;
 }

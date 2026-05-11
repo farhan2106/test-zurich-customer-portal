@@ -41,7 +41,9 @@ function SubmitClaimFormContent() {
 
   const policyIdParam = searchParams.get('policyId');
 
-  const [policyId, setPolicyId] = useState('');
+  // Track whether user has manually selected a policy (to not override with URL param)
+  const [userSelected, setUserSelected] = useState(false);
+
   const [claimType, setClaimType] = useState('');
   const [description, setDescription] = useState('');
   const [incidentDate, setIncidentDate] = useState('');
@@ -54,22 +56,18 @@ function SubmitClaimFormContent() {
     dispatch(fetchPolicies());
   }, [dispatch]);
 
-  // Pre-select policy if query param present
-  useEffect(() => {
-    if (policyIdParam && policies.length > 0) {
-      const matched = policies.find((p) => p.id === policyIdParam);
-      if (matched) {
-        setPolicyId(matched.id);
-      }
-    }
-  }, [policyIdParam, policies]);
+  // Separate state for the actual select value
+  const [policyIdState, setPolicyIdState] = useState('');
 
+  // Derive effective policyId: user selection takes priority, otherwise use URL param if valid
   const activePolicies = policies.filter((p) => p.status === 'active');
+  const urlParamValid = policyIdParam && activePolicies.some((p) => p.id === policyIdParam);
+  const effectivePolicyId = userSelected ? policyIdState : (urlParamValid ? policyIdParam : '');
 
   const validate = (): FormErrors => {
     const newErrors: FormErrors = {};
 
-    if (!policyId) {
+    if (!effectivePolicyId) {
       newErrors.policyId = 'Please select a policy';
     }
     if (!claimType) {
@@ -109,7 +107,7 @@ function SubmitClaimFormContent() {
     const result = await dispatch(
       submitClaim({
         type: claimType,
-        policyId,
+        policyId: effectivePolicyId,
         incidentDate,
         description,
         incidentLocation: incidentLocation || '',
@@ -156,8 +154,11 @@ function SubmitClaimFormContent() {
               className={`select select-bordered w-full ${
                 touched.policyId && errors.policyId ? 'select-error' : ''
               }`}
-              value={policyId}
-              onChange={(e) => setPolicyId(e.target.value)}
+              value={effectivePolicyId}
+              onChange={(e) => {
+                setUserSelected(true);
+                setPolicyIdState(e.target.value);
+              }}
               onBlur={() => handleBlur('policyId')}
               disabled={isLoading}
               aria-invalid={!!(touched.policyId && errors.policyId)}

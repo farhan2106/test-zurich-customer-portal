@@ -11,12 +11,12 @@ describe('authSlice', () => {
   });
 
   describe('initial state', () => {
-    it('should have initial state { user: null, token: null, isLoading: false, error: null }', () => {
+    it('should have initial state { user: null, token: null, isLoading: true, error: null }', () => {
       const store = createStore();
       expect(store.getState().auth).toEqual({
         user: null,
         token: null,
-        isLoading: false,
+        isLoading: true,
         error: null,
       });
     });
@@ -53,7 +53,6 @@ describe('authSlice', () => {
       role: 'customer',
       photoUrl: null,
     };
-    const mockToken = 'eyJhbGciOiJIUzI1NiJ9.mock.token';
 
     it('should set user, token: null, isLoading: false, and error: null', () => {
       const store = createStore();

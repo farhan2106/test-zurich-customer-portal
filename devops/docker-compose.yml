@@ -1,0 +1,139 @@
+# Zurich Customer Portal - Production Docker Compose
+#
+# Services:
+#   - PostgreSQL 16 (database)
+#   - NestJS Backend (API, port 3001)
+#   - Next.js Frontend (UI, port 3000)
+#
+# Usage:
+#   docker compose --env-file devops/.env up -d
+#   docker compose down
+#   docker compose logs -f backend
+
+name: zurich-app
+
+services:
+  # ─────────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: zurich-postgres
+    restart: unless-stopped
+
+    ports:
+      - "${DB_PORT:-5432}:5432"
+
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-zurich_secret}
+      POSTGRES_DB: ${DB_DATABASE:-zurich_app}
+
+    volumes:
+      # Persistent database data — survives container recreation
+      - postgres_data:/var/lib/postgresql/data
+      # Shared application data volume (uploads, exports, etc.)
+      - app_data:/app/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - zurich-network
+
+  # ─────────────────────────────────────────────
+  # NestJS Backend (API)
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.backend
+    links:
+      - postgres
+    container_name: zurich-backend
+    restart: unless-stopped
+
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+
+    volumes:
+      # Shared application data volume for file uploads and persistent storage
+      - app_data:/app/data
+
+    environment:
+      # Runtime environment
+      NODE_ENV: production
+
+      # Database connection (uses Docker service name for host)
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-zurich_secret}
+      DB_DATABASE: ${DB_DATABASE:-zurich_app}
+
+      # Authentication — JWT_SECRET is REQUIRED (no default)
+      JWT_SECRET: ${JWT_SECRET}
+
+      # Google OAuth — both values are REQUIRED
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
+      # Service URLs
+      API_URL: ${API_URL:-http://localhost:3001}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - zurich-network
+
+  # ─────────────────────────────────────────────
+  # Next.js Frontend (UI)
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.frontend
+      args:
+        # API URL baked into the client-side bundle at build time
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
+    container_name: zurich-frontend
+    restart: unless-stopped
+
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+
+    environment:
+      NODE_ENV: production
+
+    depends_on:
+      - backend
+
+    networks:
+      - zurich-network
+
+# ─────────────────────────────────────────────
+# Named Volumes
+# ─────────────────────────────────────────────
+volumes:
+  # PostgreSQL data — persists across container restarts and recreations
+  postgres_data:
+    driver: local
+
+  # Shared application data — file uploads, exports, and other persistent files
+  app_data:
+    driver: local
+
+# ─────────────────────────────────────────────
+# Networks
+# ─────────────────────────────────────────────
+networks:
+  # Isolated bridge network for inter-service communication
+  zurich-network:
+    driver: bridge

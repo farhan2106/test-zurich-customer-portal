@@ -144,8 +144,8 @@ The following entities are auto-loaded and synchronized:
 
 ```
 Customer ──1:N──> Policy ──1:N──> Claim
-                     │
-                     └──N:1── Product
+                      │
+                      └──N:1── Product
 ```
 
 ### Adding TypeORM Migrations
@@ -192,6 +192,70 @@ This creates:
 - Sample claims under review
 
 > **Note:** The seed script connects using environment variables from your `.env` file. Ensure the database is running before executing.
+
+---
+
+## Admin Role
+
+The application uses a role-based access control system with two roles: `customer` (default) and `admin`.
+
+### How Users Get Their Role
+
+- **New Google OAuth signups** are automatically created with `role: 'customer'`
+- **The seed script** also creates all sample users with `role: 'customer'`
+- There is no self-service admin promotion endpoint (by design)
+
+### Promoting a User to Admin
+
+To grant admin access to a user, update their role directly in the PostgreSQL database:
+
+**1. Connect to the database:**
+
+```bash
+# Using Docker (if running PostgreSQL in a container)
+docker exec -it zurich-postgres psql -U zurich -d CUSTOMER_BILLING_PORTAL
+
+# Or using local psql
+psql -h localhost -p 5432 -U zurich -d CUSTOMER_BILLING_PORTAL
+```
+
+**2. Find the user by email:**
+
+```sql
+SELECT id, email, role FROM customers WHERE email = 'user@example.com';
+```
+
+**3. Promote to admin:**
+
+```sql
+UPDATE customers SET role = 'admin' WHERE email = 'user@example.com';
+```
+
+Or as a one-liner:
+
+```bash
+docker exec -i zurich-postgres psql -U zurich -d CUSTOMER_BILLING_PORTAL \
+  -c "UPDATE customers SET role = 'admin' WHERE email = 'user@example.com';"
+```
+
+### Verifying the Change
+
+After updating, the user must:
+
+1. Log out (clear cookies or close the browser)
+2. Sign in again with Google OAuth
+3. Navigate to `/admin/customers` — they should now see the admin panel
+
+The API will return the updated role from `GET /api/auth/profile`, and the frontend admin guards (`user.role === 'admin'`) will allow access.
+
+### Role Values
+
+| Role       | Enum Value          | Description                        |
+|------------|---------------------|------------------------------------|
+| `customer` | `CustomerRole.CUSTOMER` | Default role for all users     |
+| `admin`    | `CustomerRole.ADMIN`    | Grants access to admin features |
+
+> **Security note:** Admin access should be provisioned intentionally. Never promote users to admin in production without proper authorization workflows.
 
 ---
 

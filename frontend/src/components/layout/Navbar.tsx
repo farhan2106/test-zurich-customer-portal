@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/authSlice';
@@ -192,9 +193,11 @@ export function Navbar() {
               aria-label={`User menu for ${user.firstName}`}
             >
               {user.photoUrl ? (
-                <img
+                <Image
                   src={user.photoUrl}
                   alt=""
+                  width={32}
+                  height={32}
                   className="w-8 h-8 rounded-full object-cover"
                   referrerPolicy="no-referrer"
                 />

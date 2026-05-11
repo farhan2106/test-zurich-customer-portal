@@ -35,8 +35,9 @@ export async function submitClaim(data: CreateClaimDto): Promise<Claim> {
   try {
     const response = await apiClient.post('/claims', data);
     return response.data;
-  } catch (error: any) {
-    const message = error.response?.data?.message || error.message || 'Submission failed';
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string | string[] } }; message?: string };
+    const message = err.response?.data?.message || err.message || 'Submission failed';
     throw new Error(Array.isArray(message) ? message.join(', ') : message);
   }
 }

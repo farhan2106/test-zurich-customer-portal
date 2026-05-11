@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@/test-utils';
+import { render, screen, act } from '@/test-utils';
 import { useParams } from 'next/navigation';
 import * as policyService from '@/services/policy.service';
 
@@ -10,6 +10,28 @@ jest.mock('@/services/policy.service');
 
 import PolicyDetailPage from '@/app/policies/[id]/page';
 import policyReducer from '@/store/slices/policySlice';
+
+interface PolicyState {
+  items: typeof mockPolicy[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+interface TestPreloadedState {
+  auth: {
+    user: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+    };
+    token: string | null;
+    isLoading: boolean;
+    error: string | null;
+  };
+  policy?: PolicyState;
+}
 
 const mockPolicy = {
   id: 'pol_abc123',
@@ -93,7 +115,7 @@ describe('PolicyDetailPage', () => {
           preloadedState: {
             ...authenticatedState,
             policy: { items: [], isLoading: false, error: null },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -109,7 +131,7 @@ describe('PolicyDetailPage', () => {
           preloadedState: {
             ...authenticatedState,
             policy: { items: [mockPolicy], isLoading: false, error: null },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -125,7 +147,7 @@ describe('PolicyDetailPage', () => {
           preloadedState: {
             ...authenticatedState,
             policy: { items: [mockPolicy], isLoading: false, error: null },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -146,7 +168,7 @@ describe('PolicyDetailPage', () => {
           preloadedState: {
             ...authenticatedState,
             policy: { items: [mockPolicy], isLoading: false, error: null },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -180,7 +202,7 @@ describe('PolicyDetailPage', () => {
               isLoading: false,
               error: null,
             },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -200,7 +222,7 @@ describe('PolicyDetailPage', () => {
               isLoading: false,
               error: null,
             },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -224,7 +246,7 @@ describe('PolicyDetailPage', () => {
               isLoading: false,
               error: null,
             },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -241,7 +263,7 @@ describe('PolicyDetailPage', () => {
           preloadedState: {
             ...authenticatedState,
             policy: { items: [mockPolicy], isLoading: false, error: null },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -264,7 +286,7 @@ describe('PolicyDetailPage', () => {
           preloadedState: {
             ...authenticatedState,
             policy: { items: [], isLoading: true, error: null },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       })
@@ -287,7 +309,7 @@ describe('PolicyDetailPage', () => {
               isLoading: false,
               error: 'Policy not found',
             },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -303,7 +325,7 @@ describe('PolicyDetailPage', () => {
           preloadedState: {
             ...authenticatedState,
             policy: { items: [mockPolicy], isLoading: false, error: null },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });
@@ -323,7 +345,7 @@ describe('PolicyDetailPage', () => {
           preloadedState: {
             ...authenticatedState,
             policy: { items: [mockPolicy], isLoading: false, error: null },
-          } as any,
+          } as TestPreloadedState,
           additionalReducers: { policy: policyReducer },
         });
       });

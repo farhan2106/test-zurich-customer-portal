@@ -1,23 +1,8 @@
-import { render, screen, waitFor } from '@/test-utils';
-import apiClient from '@/services/api-client';
+import { render, screen, act } from '@/test-utils';
+import productReducer from '@/store/slices/productSlice';
 
 const mockRedirect = jest.fn();
 const mockUseParams = jest.fn(() => ({}));
-
-jest.mock('@/services/api-client', () => ({
-  __esModule: true,
-  default: {
-    get: jest.fn(),
-    post: jest.fn(),
-    put: jest.fn(),
-    patch: jest.fn(),
-    delete: jest.fn(),
-    interceptors: {
-      request: { use: jest.fn() },
-      response: { use: jest.fn() },
-    },
-  },
-}));
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({
@@ -43,6 +28,8 @@ const mockProducts = [
     name: 'Auto Insurance',
     description: 'Comprehensive auto coverage for all vehicle types',
     basePremium: 500.0,
+    coverageDetails: {},
+    status: 'active',
   },
   {
     id: '2',
@@ -50,6 +37,8 @@ const mockProducts = [
     name: 'Property Insurance',
     description: 'Protect your home and property against damage and theft',
     basePremium: 1200.0,
+    coverageDetails: {},
+    status: 'active',
   },
 ];
 
@@ -66,6 +55,14 @@ const authenticatedState = {
     isLoading: false,
     error: null,
   },
+  product: {
+    items: mockProducts,
+    selectedProduct: null,
+    isLoading: false,
+    error: null,
+    notFound: false,
+    hasLoaded: true,
+  },
 };
 
 describe('ProductsPage', () => {
@@ -75,20 +72,35 @@ describe('ProductsPage', () => {
 
   describe('heading', () => {
     it('renders "Insurance Products" heading', async () => {
-      apiClient.get.mockResolvedValue({ data: mockProducts });
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(
-          screen.getByRole('heading', { name: /Insurance Products/i })
-        ).toBeInTheDocument();
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: authenticatedState,
+          additionalReducers: { product: productReducer },
+        });
       });
+      expect(
+        screen.getByRole('heading', { name: /Insurance Products/i })
+      ).toBeInTheDocument();
     });
   });
 
   describe('loading state', () => {
     it('shows skeleton cards while loading', () => {
-      apiClient.get.mockReturnValue(new Promise(() => {}));
-      render(<ProductsPage />, { preloadedState: authenticatedState });
+      const loadingState = {
+        ...authenticatedState,
+        product: {
+          items: [],
+          selectedProduct: null,
+          isLoading: true,
+          error: null,
+          notFound: false,
+          hasLoaded: false,
+        },
+      };
+      render(<ProductsPage />, {
+        preloadedState: loadingState,
+        additionalReducers: { product: productReducer },
+      });
       const skeletons = document.querySelectorAll('.skeleton');
       expect(skeletons.length).toBeGreaterThan(0);
     });
@@ -96,61 +108,70 @@ describe('ProductsPage', () => {
 
   describe('data loaded', () => {
     it('renders product cards when data loaded', async () => {
-      apiClient.get.mockResolvedValue({ data: mockProducts });
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(screen.getByText('Auto Insurance')).toBeInTheDocument();
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: authenticatedState,
+          additionalReducers: { product: productReducer },
+        });
       });
-      await waitFor(() => {
-        expect(screen.getByText('Property Insurance')).toBeInTheDocument();
-      });
+      expect(screen.getByText('Auto Insurance')).toBeInTheDocument();
+      expect(screen.getByText('Property Insurance')).toBeInTheDocument();
     });
 
     it('each card shows product name', async () => {
-      apiClient.get.mockResolvedValue({ data: mockProducts });
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(screen.getByText('Auto Insurance')).toBeInTheDocument();
-        expect(screen.getByText('Property Insurance')).toBeInTheDocument();
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: authenticatedState,
+          additionalReducers: { product: productReducer },
+        });
       });
+      expect(screen.getByText('Auto Insurance')).toBeInTheDocument();
+      expect(screen.getByText('Property Insurance')).toBeInTheDocument();
     });
 
     it('each card shows product code', async () => {
-      apiClient.get.mockResolvedValue({ data: mockProducts });
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(screen.getByText(/4000/)).toBeInTheDocument();
-        expect(screen.getByText(/5000/)).toBeInTheDocument();
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: authenticatedState,
+          additionalReducers: { product: productReducer },
+        });
       });
+      expect(screen.getByText(/4000/)).toBeInTheDocument();
+      expect(screen.getByText(/5000/)).toBeInTheDocument();
     });
 
     it('each card shows product description', async () => {
-      apiClient.get.mockResolvedValue({ data: mockProducts });
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(
-          screen.getByText(/Comprehensive auto coverage/)
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText(/Protect your home and property/)
-        ).toBeInTheDocument();
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: authenticatedState,
+          additionalReducers: { product: productReducer },
+        });
       });
+      expect(
+        screen.getByText(/Comprehensive auto coverage/)
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/Protect your home and property/)
+      ).toBeInTheDocument();
     });
 
     it('each card shows premium', async () => {
-      apiClient.get.mockResolvedValue({ data: mockProducts });
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(screen.getByText(/From MYR 500/)).toBeInTheDocument();
-        expect(screen.getByText(/1,200/)).toBeInTheDocument();
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: authenticatedState,
+          additionalReducers: { product: productReducer },
+        });
       });
+      expect(screen.getByText(/From MYR 500/)).toBeInTheDocument();
+      expect(screen.getByText(/1,200/)).toBeInTheDocument();
     });
 
     it('has "Learn More" button linking to /products/[id]', async () => {
-      apiClient.get.mockResolvedValue({ data: mockProducts });
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(screen.getAllByText('Learn More')).toHaveLength(2);
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: authenticatedState,
+          additionalReducers: { product: productReducer },
+        });
       });
       const learnMoreButtons = screen.getAllByText('Learn More');
       expect(learnMoreButtons.length).toBe(2);
@@ -166,10 +187,11 @@ describe('ProductsPage', () => {
     });
 
     it('has "Purchase Now" button linking to /purchase?productId=[id]', async () => {
-      apiClient.get.mockResolvedValue({ data: mockProducts });
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(screen.getAllByText('Purchase Now')).toHaveLength(2);
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: authenticatedState,
+          additionalReducers: { product: productReducer },
+        });
       });
       const purchaseButtons = screen.getAllByText('Purchase Now');
       expect(purchaseButtons.length).toBe(2);
@@ -187,31 +209,55 @@ describe('ProductsPage', () => {
 
   describe('error state', () => {
     it('shows error message with retry button on API failure', async () => {
-      apiClient.get.mockRejectedValue(new Error('Network error'));
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(
-          screen.getByText(/Unable to load products/i)
-        ).toBeInTheDocument();
+      const errorState = {
+        ...authenticatedState,
+        product: {
+          items: [],
+          selectedProduct: null,
+          isLoading: false,
+          error: 'Unable to load products.',
+          notFound: false,
+          hasLoaded: true,
+        },
+      };
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: errorState,
+          additionalReducers: { product: productReducer },
+        });
       });
+      expect(
+        screen.getByText(/Unable to load products/i)
+      ).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Retry/i })).toBeInTheDocument();
     });
   });
 
   describe('empty state', () => {
     it('shows empty state when empty array returned', async () => {
-      apiClient.get.mockResolvedValue({ data: [] });
-      render(<ProductsPage />, { preloadedState: authenticatedState });
-      await waitFor(() => {
-        expect(
-          screen.getByText(/No products available/i)
-        ).toBeInTheDocument();
+      const emptyState = {
+        ...authenticatedState,
+        product: {
+          items: [],
+          selectedProduct: null,
+          isLoading: false,
+          error: null,
+          notFound: false,
+          hasLoaded: true,
+        },
+      };
+      await act(async () => {
+        render(<ProductsPage />, {
+          preloadedState: emptyState,
+          additionalReducers: { product: productReducer },
+        });
       });
-      await waitFor(() => {
-        expect(
-          screen.getByText(/npm run seed/i)
-        ).toBeInTheDocument();
-      });
+      expect(
+        screen.getByText(/No products available/i)
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/npm run seed/i)
+      ).toBeInTheDocument();
     });
   });
 });

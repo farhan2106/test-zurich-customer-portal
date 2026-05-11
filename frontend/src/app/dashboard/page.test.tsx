@@ -1,7 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act, within } from '@/test-utils';
+import { render, screen, act, within } from '@/test-utils';
 import * as policyService from '@/services/policy.service';
-import * as nextNavigation from 'next/navigation';
 
 // Mock the policy service
 jest.mock('@/services/policy.service');

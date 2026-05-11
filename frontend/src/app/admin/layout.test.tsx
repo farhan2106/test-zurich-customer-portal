@@ -10,32 +10,32 @@ describe('AdminLayout', () => {
     jest.clearAllMocks();
   });
 
-  it('shows "Loading..." with spinner when auth isLoading (user=null, token=null, isLoading=true)', () => {
+  it('shows "Signing in..." spinner when auth isLoading', () => {
     renderWithProviders(<AdminLayout />, {
       preloadedState: {
         auth: { user: null, token: null, isLoading: true, error: null },
       },
     });
 
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(screen.getByText(/signing in/i)).toBeInTheDocument();
   });
 
-  it('shows loading when user is not yet set (user=null, token=exists, isLoading=true)', () => {
+  it('redirects unauthenticated user (user=null, isLoading=false) to /', () => {
     renderWithProviders(<AdminLayout />, {
       preloadedState: {
-        auth: { user: null, token: 'some-token', isLoading: true, error: null },
+        auth: { user: null, token: null, isLoading: false, error: 'Not authenticated' },
       },
     });
 
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(redirect).toHaveBeenCalledWith('/');
   });
 
   it('redirects non-admin user to /dashboard when user.role is customer', () => {
     renderWithProviders(<AdminLayout />, {
       preloadedState: {
         auth: {
-          user: { id: 'usr_1', email: 'user@example.com', firstName: 'User', lastName: 'Test', role: 'customer' },
-          token: 'some-token',
+          user: { id: 'usr_1', email: 'user@example.com', firstName: 'User', lastName: 'Test', role: 'customer', photoUrl: null },
+          token: null,
           isLoading: false,
           error: null,
         },
@@ -53,8 +53,8 @@ describe('AdminLayout', () => {
       {
         preloadedState: {
           auth: {
-            user: { id: 'usr_1', email: 'admin@example.com', firstName: 'Admin', lastName: 'User', role: 'admin' },
-            token: 'some-token',
+            user: { id: 'usr_1', email: 'admin@example.com', firstName: 'Admin', lastName: 'User', role: 'admin', photoUrl: null },
+            token: null,
             isLoading: false,
             error: null,
           },
@@ -74,8 +74,8 @@ describe('AdminLayout', () => {
       {
         preloadedState: {
           auth: {
-            user: { id: 'usr_1', email: 'admin@example.com', firstName: 'Admin', lastName: 'User', role: 'admin' },
-            token: 'some-token',
+            user: { id: 'usr_1', email: 'admin@example.com', firstName: 'Admin', lastName: 'User', role: 'admin', photoUrl: null },
+            token: null,
             isLoading: false,
             error: null,
           },
@@ -94,8 +94,8 @@ describe('AdminLayout', () => {
       {
         preloadedState: {
           auth: {
-            user: { id: 'usr_1', email: 'admin@example.com', firstName: 'Admin', lastName: 'User', role: 'admin' },
-            token: 'some-token',
+            user: { id: 'usr_1', email: 'admin@example.com', firstName: 'Admin', lastName: 'User', role: 'admin', photoUrl: null },
+            token: null,
             isLoading: false,
             error: null,
           },

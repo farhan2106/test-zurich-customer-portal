@@ -17,7 +17,6 @@ jest.mock('@/services/api-client', () => ({
 }));
 
 import apiClient from '@/services/api-client';
-import * as nextNavigation from 'next/navigation';
 
 // Mock the policy service
 jest.mock('@/services/policy.service');
@@ -251,8 +250,8 @@ describe('Purchase Page', () => {
   });
 
   it('shows 409 duplicate policy error from API', async () => {
-    const duplicateError = new Error('You already have an active policy for this product');
-    (duplicateError as any).response = { status: 409 };
+    const duplicateError = new Error('You already have an active policy for this product') as Error & { response?: { status: number } };
+    (duplicateError).response = { status: 409 };
     mockedPolicyService.purchasePolicy.mockRejectedValue(duplicateError);
 
     render(<PurchasePage />, { preloadedState: authenticatedState });

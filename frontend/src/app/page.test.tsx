@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@/test-utils';
+import { render, screen } from '@/test-utils';
 import * as nextNavigation from 'next/navigation';
 
 jest.mock('next/navigation', () => ({

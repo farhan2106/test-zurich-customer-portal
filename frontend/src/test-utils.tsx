@@ -6,6 +6,7 @@ import authReducer from '@/store/slices/authSlice';
 import policyReducer from '@/store/slices/policySlice';
 import claimReducer from '@/store/slices/claimSlice';
 import adminReducer from '@/store/slices/adminSlice';
+import productReducer from '@/store/slices/productSlice';
 import type { RootState } from '@/store';
 
 interface ExtendedOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -31,6 +32,8 @@ export function renderWithProviders(
         claim: claimReducer as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         admin: adminReducer as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        product: productReducer as any,
         ...additionalReducers,
       },
       preloadedState,

@@ -10,9 +10,18 @@ describe('apiClient', () => {
   });
 
   describe('response interceptor logic (specification tests)', () => {
-    const applyResponseSuccess = (response: any) => response;
+    interface MockResponse {
+      data: unknown;
+      status: number;
+    }
 
-    const applyResponseError = (error: any) => {
+    interface MockError {
+      response?: { status: number };
+    }
+
+    const applyResponseSuccess = (response: MockResponse) => response;
+
+    const applyResponseError = (error: MockError) => {
       // No more localStorage handling — just redirect on 401
       if (error.response?.status === 401 && typeof window !== 'undefined') {
         window.location.href = '/';
@@ -29,10 +38,9 @@ describe('apiClient', () => {
 
     it('should redirect to / on 401 response', () => {
       const error = { response: { status: 401 } };
-      
-      // Save and suppress error
-      const promise = applyResponseError(error).catch(() => {});
-      
+
+      applyResponseError(error).catch(() => {});
+
       expect(window.location.pathname).toBe('/');
     });
 
@@ -44,33 +52,36 @@ describe('apiClient', () => {
     it('should not redirect on other status codes (e.g. 500)', () => {
       const originalHref = window.location.href;
       const error = { response: { status: 500 } };
-      
+
       applyResponseError(error).catch(() => {});
-      
+
       expect(window.location.href).toBe(originalHref);
     });
 
     it('should not redirect on non-HTTP errors (network failure)', () => {
       const originalHref = window.location.href;
       const error = new Error('Network Error');
-      
+
       applyResponseError(error).catch(() => {});
-      
+
       expect(window.location.href).toBe(originalHref);
     });
   });
 
   describe('response interceptor URL guard', () => {
-    let errorHandler: Function;
+    let errorHandler: (error: unknown) => Promise<never>;
     const originalHref = 'http://localhost/';
 
-    beforeAll(() => {
+    beforeAll(async () => {
       // Import the REAL api-client module (bypass __mocks__ via relative path)
       // to access the actual axios response interceptor error handler.
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const realApiClient = require('./api-client').default;
+
+      const realApiClientModule = await import('./api-client');
+      const realApiClient = realApiClientModule.default;
       // Access the rejected (error) handler registered on the axios instance
-      errorHandler = (realApiClient.interceptors.response as any).handlers[0].rejected;
+      errorHandler = (
+        realApiClient.interceptors.response as { handlers: Array<{ rejected: (error: unknown) => Promise<never> }> }
+      ).handlers[0].rejected;
     });
 
     beforeEach(() => {

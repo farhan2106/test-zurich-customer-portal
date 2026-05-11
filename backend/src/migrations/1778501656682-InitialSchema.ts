@@ -4,6 +4,29 @@ export class InitialSchema1778501656682 implements MigrationInterface {
   name = 'InitialSchema1778501656682';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Create enum types BEFORE tables that reference them
+    await queryRunner.query(
+      `CREATE TYPE "public"."claims_type_enum" AS ENUM('accident', 'theft', 'damage', 'other')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."claims_status_enum" AS ENUM('submitted', 'under_review', 'approved', 'rejected')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."customers_location_enum" AS ENUM('West Malaysia', 'East Malaysia')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."customers_role_enum" AS ENUM('customer', 'admin')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."policies_status_enum" AS ENUM('active', 'expired', 'cancelled')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."policies_location_enum" AS ENUM('West Malaysia', 'East Malaysia')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."products_status_enum" AS ENUM('active', 'inactive')`,
+    );
+
     await queryRunner.query(
       `CREATE TABLE "claims" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "claimNumber" character varying NOT NULL, "policyId" uuid NOT NULL, "customerId" uuid NOT NULL, "type" "public"."claims_type_enum" NOT NULL, "description" text NOT NULL, "incidentDate" TIMESTAMP NOT NULL, "incidentLocation" character varying(500), "status" "public"."claims_status_enum" NOT NULL DEFAULT 'submitted', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_ae47a48242e9feaa7e202e344c9" UNIQUE ("claimNumber"), CONSTRAINT "PK_96c91970c0dcb2f69fdccd0a698" PRIMARY KEY ("id"))`,
     );
@@ -47,5 +70,14 @@ export class InitialSchema1778501656682 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "policies"`);
     await queryRunner.query(`DROP TABLE "customers"`);
     await queryRunner.query(`DROP TABLE "claims"`);
+
+    // Drop enum types AFTER tables that reference them
+    await queryRunner.query(`DROP TYPE "public"."claims_type_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."claims_status_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."customers_location_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."customers_role_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."policies_status_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."policies_location_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."products_status_enum"`);
   }
 }

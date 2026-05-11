@@ -102,7 +102,10 @@ describe('Navbar', () => {
     // waitFor handles the async dispatch in handleSignOut (which awaits apiClient.post before dispatching)
     await waitFor(() => {
       const logoutCall = dispatchSpy.mock.calls.find(
-        (call) => call[0] && (call[0] as any).type === logout.type,
+        (call) => {
+          const action = call[0] as { type?: string } | undefined;
+          return action && action.type === logout.type;
+        },
       );
       expect(logoutCall).toBeDefined();
     });

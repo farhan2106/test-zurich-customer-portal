@@ -33,10 +33,11 @@ jest.mock('next/navigation', () => ({
   redirect: jest.fn(),
 }));
 
+import { useSearchParams } from 'next/navigation';
+
 // Helper to set search params
 function setSearchParams(params: Record<string, string>) {
-  const { useSearchParams } = require('next/navigation');
-  useSearchParams.mockReturnValue(
+  (useSearchParams as jest.Mock).mockReturnValue(
     new URLSearchParams(Object.entries(params).map(([k, v]) => [k, v]))
   );
 }
@@ -130,8 +131,7 @@ describe('Submit Claim Page', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset useSearchParams to default empty state
-    const { useSearchParams } = require('next/navigation');
-    useSearchParams.mockReturnValue(new URLSearchParams());
+    (useSearchParams as jest.Mock).mockReturnValue(new URLSearchParams());
     mockedPolicyService.getPolicies.mockResolvedValue(mockPolicies);
   });
 
