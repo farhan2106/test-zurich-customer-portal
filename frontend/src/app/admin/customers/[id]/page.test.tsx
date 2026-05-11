@@ -97,7 +97,9 @@ describe('Admin Customer Detail/Edit Page', () => {
   it('renders Profile tab content with firstName, lastName, email, location, premiumPaid, role', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    });
 
     await waitFor(() => {
       expect(screen.getByText('John')).toBeInTheDocument();
@@ -112,12 +114,16 @@ describe('Admin Customer Detail/Edit Page', () => {
   it('renders Policies tab with policy data in table', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    });
 
-    await waitFor(() => {
-      // Click on Policies tab
+    await waitFor(async () => {
       const policiesTab = screen.getByRole('tab', { name: /policies/i });
-      fireEvent.click(policiesTab);
+
+      await act(async () => {
+        fireEvent.click(policiesTab);
+      });
 
       expect(screen.getByText('POL-001')).toBeInTheDocument();
       expect(screen.getByText('active')).toBeInTheDocument();
@@ -128,12 +134,16 @@ describe('Admin Customer Detail/Edit Page', () => {
   it('renders Claims tab with claim data in table', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    });
 
-    await waitFor(() => {
-      // Click on Claims tab
+    await waitFor(async () => {
       const claimsTab = screen.getByRole('tab', { name: /claims/i });
-      fireEvent.click(claimsTab);
+
+      await act(async () => {
+        fireEvent.click(claimsTab);
+      });
 
       expect(screen.getByText('CLM-001')).toBeInTheDocument();
       expect(screen.getByText('accident')).toBeInTheDocument();
@@ -144,27 +154,33 @@ describe('Admin Customer Detail/Edit Page', () => {
   it('shows "Edit" button that toggles edit mode', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    });
 
     await waitFor(() => {
       const editButton = screen.getByRole('button', { name: /edit/i });
       expect(editButton).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    });
 
-    // After clicking Edit, input fields should appear
     expect(screen.getByDisplayValue('John')).toBeInTheDocument();
   });
 
   it('in edit mode: shows input fields for firstName and lastName', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    });
 
-    await waitFor(() => {
-      // Enter edit mode
-      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await waitFor(async () => {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+      });
     });
 
     const firstNameInput = screen.getByDisplayValue('John');
@@ -177,14 +193,16 @@ describe('Admin Customer Detail/Edit Page', () => {
   it('in edit mode: shows location dropdown', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
-
-    await waitFor(() => {
-      // Enter edit mode
-      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
     });
 
-    // Location should be a select/dropdown
+    await waitFor(async () => {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+      });
+    });
+
     const locationSelect = screen.getByDisplayValue('West Malaysia');
     expect(locationSelect).toBeInTheDocument();
   });
@@ -192,11 +210,14 @@ describe('Admin Customer Detail/Edit Page', () => {
   it('in edit mode: shows premiumPaid number input', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    });
 
-    await waitFor(() => {
-      // Enter edit mode
-      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await waitFor(async () => {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+      });
     });
 
     const premiumInput = screen.getByDisplayValue('1500');
@@ -207,15 +228,18 @@ describe('Admin Customer Detail/Edit Page', () => {
   it('in edit mode: email is read-only (not an editable input)', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
-
-    await waitFor(() => {
-      // Enter edit mode
-      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
     });
 
-    // Email should be displayed as text but NOT as an editable input
+    await waitFor(async () => {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+      });
+    });
+
     expect(screen.getByText('john@example.com')).toBeInTheDocument();
+
     const emailInput = screen.queryByDisplayValue('john@example.com');
     expect(emailInput).not.toBeInTheDocument();
   });
@@ -223,34 +247,44 @@ describe('Admin Customer Detail/Edit Page', () => {
   it('shows "Save Changes" and "Cancel" buttons in edit mode', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
-
-    await waitFor(() => {
-      // Enter edit mode
-      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
     });
 
-    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+    await waitFor(async () => {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+      });
+    });
+
+    expect(
+      screen.getByRole('button', { name: /save changes/i })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('button', { name: /cancel/i })
+    ).toBeInTheDocument();
   });
 
   it('"Cancel" button reverts to view mode', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
-
-    await waitFor(() => {
-      // Enter edit mode
-      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
     });
 
-    // Verify we're in edit mode
+    await waitFor(async () => {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+      });
+    });
+
     expect(screen.getByDisplayValue('John')).toBeInTheDocument();
 
-    // Click Cancel
-    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+    });
 
-    // Should be back in view mode — input fields gone, plain text visible
     expect(screen.queryByDisplayValue('John')).not.toBeInTheDocument();
     expect(screen.getByText('John')).toBeInTheDocument();
   });
@@ -258,17 +292,22 @@ describe('Admin Customer Detail/Edit Page', () => {
   it('shows "Back to Customers" navigation link/button', async () => {
     mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
 
-    render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, { preloadedState: detailState });
+    });
 
     await waitFor(() => {
-      const backLink = screen.getByRole('link', { name: /back to customers/i });
+      const backLink = screen.getByRole('link', {
+        name: /back to customers/i,
+      });
+
       expect(backLink).toBeInTheDocument();
       expect(backLink).toHaveAttribute('href', '/admin/customers');
     });
   });
 
   it('shows loading state when isLoading=true', async () => {
-    mockedAdminService.getCustomerById.mockResolvedValue(mockCustomerDetail);
+    mockedAdminService.getCustomerById.mockReturnValue(new Promise(() => {}));
 
     const loadingState = {
       ...detailState,
@@ -280,14 +319,20 @@ describe('Admin Customer Detail/Edit Page', () => {
       },
     };
 
-    render(<AdminCustomerDetailPage />, { preloadedState: loadingState });
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, {
+        preloadedState: loadingState,
+      });
+    });
 
     const skeletons = document.querySelectorAll('.skeleton');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('shows error alert on error state', async () => {
-    mockedAdminService.getCustomerById.mockRejectedValue(new Error('Failed to fetch customer'));
+    mockedAdminService.getCustomerById.mockRejectedValue(
+      new Error('Failed to fetch customer')
+    );
 
     const errorState = {
       ...detailState,
@@ -299,10 +344,16 @@ describe('Admin Customer Detail/Edit Page', () => {
       },
     };
 
-    render(<AdminCustomerDetailPage />, { preloadedState: errorState });
+    await act(async () => {
+      render(<AdminCustomerDetailPage />, {
+        preloadedState: errorState,
+      });
+    });
 
     await waitFor(() => {
-      expect(screen.getByText(/Failed to fetch customer/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Failed to fetch customer/i)
+      ).toBeInTheDocument();
     });
   });
 });

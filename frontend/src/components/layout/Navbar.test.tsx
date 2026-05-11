@@ -1,4 +1,4 @@
-import { render, screen } from '@/test-utils';
+import { render, screen, waitFor } from '@/test-utils';
 import userEvent from '@testing-library/user-event';
 import { Navbar } from './Navbar';
 import * as nextNavigation from 'next/navigation';
@@ -93,10 +93,13 @@ describe('Navbar', () => {
     const signOutBtn = screen.getByRole('button', { name: /sign out/i });
     await userEvent.click(signOutBtn);
 
-    const logoutCall = dispatchSpy.mock.calls.find(
-      (call) => call[0] && (call[0] as any).type === logout.type,
-    );
-    expect(logoutCall).toBeDefined();
+    // waitFor handles the async dispatch in handleSignOut (which awaits apiClient.post before dispatching)
+    await waitFor(() => {
+      const logoutCall = dispatchSpy.mock.calls.find(
+        (call) => call[0] && (call[0] as any).type === logout.type,
+      );
+      expect(logoutCall).toBeDefined();
+    });
     dispatchSpy.mockRestore();
   });
 

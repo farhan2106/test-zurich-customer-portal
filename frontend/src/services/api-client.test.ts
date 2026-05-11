@@ -60,9 +60,9 @@ describe('apiClient', () => {
     });
   });
 
-  describe('response interceptor URL guard (fix: prevent infinite redirect on /auth/profile 401)', () => {
+  describe('response interceptor URL guard', () => {
     let errorHandler: Function;
-    const originalHref = 'http://localhost/original-page';
+    const originalHref = 'http://localhost/';
 
     beforeAll(() => {
       // Import the REAL api-client module (bypass __mocks__ via relative path)

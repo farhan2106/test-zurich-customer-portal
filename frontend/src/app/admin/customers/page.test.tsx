@@ -85,11 +85,14 @@ describe('Admin Customers List Page', () => {
   it('renders table with customer data (name, email, location)', async () => {
     mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
 
-    render(<AdminCustomersPage />, { preloadedState: adminState });
+    await act(async () => {
+      render(<AdminCustomersPage />, { preloadedState: adminState });
+    });
 
     await waitFor(() => {
       expect(screen.getAllByText('John Doe').length).toBeGreaterThanOrEqual(1);
     });
+
     expect(screen.getAllByText('john@example.com').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('West Malaysia').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Jane Smith').length).toBeGreaterThanOrEqual(1);
@@ -100,7 +103,9 @@ describe('Admin Customers List Page', () => {
   it('renders "View" buttons for each customer row', async () => {
     mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
 
-    render(<AdminCustomersPage />, { preloadedState: adminState });
+    await act(async () => {
+      render(<AdminCustomersPage />, { preloadedState: adminState });
+    });
 
     await waitFor(() => {
       const viewButtons = screen.getAllByRole('button', { name: /view/i });
@@ -111,7 +116,9 @@ describe('Admin Customers List Page', () => {
   it('shows search input with placeholder "Search customers..."', async () => {
     mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
 
-    render(<AdminCustomersPage />, { preloadedState: adminState });
+    await act(async () => {
+      render(<AdminCustomersPage />, { preloadedState: adminState });
+    });
 
     await waitFor(() => {
       const searchInput = screen.getByPlaceholderText('Search customers...');
@@ -120,7 +127,7 @@ describe('Admin Customers List Page', () => {
   });
 
   it('shows loading skeleton when isLoading=true', async () => {
-    mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
+    mockedAdminService.getCustomers.mockReturnValue(new Promise(() => {}));
 
     const loadingState = {
       ...adminState,
@@ -132,7 +139,9 @@ describe('Admin Customers List Page', () => {
       },
     };
 
-    render(<AdminCustomersPage />, { preloadedState: loadingState });
+    await act(async () => {
+      render(<AdminCustomersPage />, { preloadedState: loadingState });
+    });
 
     const skeletons = document.querySelectorAll('.skeleton');
     expect(skeletons.length).toBeGreaterThan(0);
@@ -151,7 +160,9 @@ describe('Admin Customers List Page', () => {
       },
     };
 
-    render(<AdminCustomersPage />, { preloadedState: emptyState });
+    await act(async () => {
+      render(<AdminCustomersPage />, { preloadedState: emptyState });
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/No customers match your search/i)).toBeInTheDocument();
@@ -159,7 +170,9 @@ describe('Admin Customers List Page', () => {
   });
 
   it('shows error alert with retry button on error state', async () => {
-    mockedAdminService.getCustomers.mockRejectedValue(new Error('Failed to fetch customers'));
+    mockedAdminService.getCustomers.mockRejectedValue(
+      new Error('Failed to fetch customers')
+    );
 
     const errorState = {
       ...adminState,
@@ -171,18 +184,27 @@ describe('Admin Customers List Page', () => {
       },
     };
 
-    render(<AdminCustomersPage />, { preloadedState: errorState });
+    await act(async () => {
+      render(<AdminCustomersPage />, { preloadedState: errorState });
+    });
 
     await waitFor(() => {
-      expect(screen.getByText(/Failed to fetch customers/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Failed to fetch customers/i)
+      ).toBeInTheDocument();
     });
-    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('button', { name: /retry/i })
+    ).toBeInTheDocument();
   });
 
   it('renders mobile card view with customer cards', async () => {
     mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
 
-    render(<AdminCustomersPage />, { preloadedState: adminState });
+    await act(async () => {
+      render(<AdminCustomersPage />, { preloadedState: adminState });
+    });
 
     await waitFor(() => {
       const cards = document.querySelectorAll('.card');
@@ -193,7 +215,9 @@ describe('Admin Customers List Page', () => {
   it('renders within admin layout context (page renders successfully)', async () => {
     mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
 
-    render(<AdminCustomersPage />, { preloadedState: adminState });
+    await act(async () => {
+      render(<AdminCustomersPage />, { preloadedState: adminState });
+    });
 
     await waitFor(() => {
       // Verify the page renders — admin layout handles role check at parent level
