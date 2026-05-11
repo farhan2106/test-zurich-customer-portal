@@ -25,7 +25,7 @@ describe('AuthService', () => {
     lastName: 'User',
     photoUrl: 'https://example.com/photo.jpg',
     location: CustomerLocation.WEST_MALAYSIA,
-    role: CustomerRole.CUSTOMER,
+    role: CustomerRole.ADMIN,
     premiumPaid: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -80,7 +80,7 @@ describe('AuthService', () => {
         lastName: mockGoogleProfile.lastName,
         photoUrl: mockGoogleProfile.photoUrl,
         location: CustomerLocation.WEST_MALAYSIA,
-        role: CustomerRole.CUSTOMER,
+        role: CustomerRole.ADMIN,
       });
       expect(customerRepository.save).toHaveBeenCalledWith(mockCustomer);
       expect(result).toEqual(mockCustomer);
@@ -99,7 +99,7 @@ describe('AuthService', () => {
       expect(result).toEqual(mockCustomer);
     });
 
-    it('should set default role to "customer" for new users', async () => {
+    it('should set default role to "admin" for new users', async () => {
       customerRepository.findOne.mockResolvedValue(null);
       customerRepository.create.mockReturnValue(mockCustomer);
       customerRepository.save.mockResolvedValue(mockCustomer);
@@ -108,7 +108,7 @@ describe('AuthService', () => {
 
       expect(customerRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          role: CustomerRole.CUSTOMER,
+          role: CustomerRole.ADMIN,
         }),
       );
     });

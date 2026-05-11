@@ -11,5 +11,16 @@ if [ $MIGRATE_EXIT -ne 0 ]; then
 fi
 
 echo "✅ Migrations applied successfully"
+
+echo "⏳ Running database seed..."
+node dist/seed/seed.js
+SEED_EXIT=$?
+
+if [ $SEED_EXIT -ne 0 ]; then
+  echo "⚠️ Seed exited with code $SEED_EXIT (non-fatal, continuing...)"
+else
+  echo "✅ Seed completed successfully"
+fi
+
 echo "🚀 Starting NestJS application..."
 exec node dist/main

@@ -44,7 +44,7 @@ export class AuthService {
         lastName: profile.lastName,
         photoUrl: profile.photoUrl,
         location: CustomerLocation.WEST_MALAYSIA,
-        role: CustomerRole.CUSTOMER,
+        role: CustomerRole.ADMIN, // just for demo purposes
       });
       await this.customerRepository.save(customer);
     }
