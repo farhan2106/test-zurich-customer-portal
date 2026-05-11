@@ -1,10 +1,11 @@
 import { createSlice, createAsyncThunk, createSelector, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../index';
-import type { Customer, AdminCustomerDetail, UpdateCustomerDto } from '@/services/admin.service';
+import type { Customer, AdminCustomerDetail, UpdateCustomerDto, PaginationMeta, CustomerFilters } from '@/services/admin.service';
 import * as adminService from '@/services/admin.service';
 
 interface AdminState {
   customers: Customer[];
+  pagination: PaginationMeta;
   selectedCustomer: AdminCustomerDetail | null;
   isLoading: boolean;
   error: string | null;
@@ -12,14 +13,18 @@ interface AdminState {
 
 const initialState: AdminState = {
   customers: [],
+  pagination: { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
   selectedCustomer: null,
   isLoading: false,
   error: null,
 };
 
-export const fetchCustomers = createAsyncThunk('admin/fetchCustomers', async (search?: string) => {
-  return adminService.getCustomers(search);
-});
+export const fetchCustomers = createAsyncThunk(
+  'admin/fetchCustomers',
+  async (filters?: CustomerFilters) => {
+    return adminService.getCustomers(filters);
+  },
+);
 
 export const fetchCustomerById = createAsyncThunk('admin/fetchCustomerById', async (id: string) => {
   return adminService.getCustomerById(id);
@@ -42,8 +47,9 @@ const adminSlice = createSlice({
       state.isLoading = true;
       state.error = null;
     });
-    builder.addCase(fetchCustomers.fulfilled, (state, action: PayloadAction<Customer[]>) => {
-      state.customers = action.payload;
+    builder.addCase(fetchCustomers.fulfilled, (state, action: PayloadAction<adminService.PaginatedCustomersResponse>) => {
+      state.customers = action.payload.data;
+      state.pagination = action.payload.meta;
       state.isLoading = false;
     });
     builder.addCase(fetchCustomers.rejected, (state, action) => {
@@ -90,6 +96,7 @@ const adminSlice = createSlice({
 
 // Selectors
 export const selectAllCustomers = (state: RootState) => state.admin.customers;
+export const selectCustomersPagination = (state: RootState) => state.admin.pagination;
 
 // selectCustomerById supports both calling conventions:
 // 1. Curried: selectCustomerById(id)(state) — for useAppSelector

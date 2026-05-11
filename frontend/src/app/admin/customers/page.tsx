@@ -3,23 +3,27 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchCustomers, selectAllCustomers, selectAdminLoadingState } from '@/store/slices/adminSlice';
+import { fetchCustomers, selectAllCustomers, selectAdminLoadingState, selectCustomersPagination } from '@/store/slices/adminSlice';
 import { Skeleton, Button } from '@/components/ui';
+import type { CustomerFilters } from '@/services/admin.service';
 
 export default function AdminCustomersPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const customers = useAppSelector(selectAllCustomers);
+  const pagination = useAppSelector(selectCustomersPagination);
   const { isLoading, error } = useAppSelector(selectAdminLoadingState);
-  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<CustomerFilters>({});
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
   useEffect(() => {
-    dispatch(fetchCustomers());
-  }, [dispatch]);
+    dispatch(fetchCustomers({ ...filters, page, limit }));
+  }, [dispatch, page, filters]);
 
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    dispatch(fetchCustomers(value || undefined));
+  const handleFilterChange = (key: keyof CustomerFilters, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value || undefined }));
+    setPage(1);
   };
 
   return (
@@ -28,14 +32,77 @@ export default function AdminCustomersPage() {
         <h1 className="text-3xl font-bold">Customers</h1>
       </div>
 
-      {/* Search */}
-      <div className="mb-6">
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <input
           type="text"
-          placeholder="Search customers..."
-          className="input input-bordered w-full max-w-md"
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="First name..."
+          className="input input-bordered input-sm w-full"
+          value={filters.firstName || ''}
+          onChange={e => handleFilterChange('firstName', e.target.value)}
+          aria-label="Filter by first name"
+        />
+        <input
+          type="text"
+          placeholder="Last name..."
+          className="input input-bordered input-sm w-full"
+          value={filters.lastName || ''}
+          onChange={e => handleFilterChange('lastName', e.target.value)}
+          aria-label="Filter by last name"
+        />
+        <input
+          type="text"
+          placeholder="Email..."
+          className="input input-bordered input-sm w-full"
+          value={filters.email || ''}
+          onChange={e => handleFilterChange('email', e.target.value)}
+          aria-label="Filter by email"
+        />
+        <select
+          className="select select-bordered select-sm w-full"
+          value={filters.location || ''}
+          onChange={e => handleFilterChange('location', e.target.value)}
+          aria-label="Filter by location"
+        >
+          <option value="">All Locations</option>
+          <option value="West Malaysia">West Malaysia</option>
+          <option value="East Malaysia">East Malaysia</option>
+        </select>
+        <select
+          className="select select-bordered select-sm w-full"
+          value={filters.role || ''}
+          onChange={e => handleFilterChange('role', e.target.value)}
+          aria-label="Filter by role"
+        >
+          <option value="">All Roles</option>
+          <option value="customer">Customer</option>
+          <option value="admin">Admin</option>
+        </select>
+        <input
+          type="number"
+          placeholder="Min premium (MYR)"
+          className="input input-bordered input-sm w-full"
+          value={filters.premiumMin ?? ''}
+          min={0}
+          onChange={e => handleFilterChange('premiumMin', e.target.value)}
+          aria-label="Minimum premium paid"
+        />
+        <input
+          type="number"
+          placeholder="Max premium (MYR)"
+          className="input input-bordered input-sm w-full"
+          value={filters.premiumMax ?? ''}
+          min={0}
+          onChange={e => handleFilterChange('premiumMax', e.target.value)}
+          aria-label="Maximum premium paid"
+        />
+        <input
+          type="text"
+          placeholder="Search all..."
+          className="input input-bordered input-sm w-full"
+          value={filters.search || ''}
+          onChange={e => handleFilterChange('search', e.target.value)}
+          aria-label="Search across name and email"
         />
       </div>
 
@@ -78,7 +145,7 @@ export default function AdminCustomersPage() {
       {/* Empty */}
       {!isLoading && !error && (!customers || customers.length === 0) && (
         <div className="text-center py-16">
-          <p className="text-base-content/70">No customers match your search</p>
+          <p className="text-base-content/70">No customers found</p>
         </div>
       )}
 
@@ -141,6 +208,31 @@ export default function AdminCustomersPage() {
               </div>
             ))}
           </div>
+
+          {/* Pagination controls */}
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <button
+                className="btn btn-sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                aria-label="Previous page"
+              >
+                Previous
+              </button>
+              <span className="text-sm px-4">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              <button
+                className="btn btn-sm"
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                aria-label="Next page"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </>
       )}
     </main>

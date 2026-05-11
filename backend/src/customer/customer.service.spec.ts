@@ -59,6 +59,7 @@ describe('CustomerService', () => {
     const mockCustomerRepo = {
       find: jest.fn(),
       findOne: jest.fn(),
+      findAndCount: jest.fn(),
     };
 
     const mockClaimRepo = {
@@ -1332,6 +1333,7 @@ describe('CustomerService', () => {
       const mockCustomerRepo = {
         find: jest.fn(),
         findOne: jest.fn(),
+        findAndCount: jest.fn(),
       };
 
       const mockClaimRepo = {
@@ -1367,87 +1369,296 @@ describe('CustomerService', () => {
       customerRepo = module.get(getRepositoryToken(Customer));
     });
 
-    it('should return all customers when no filters provided', async () => {
-      customerRepo.find.mockResolvedValue(mockCustomers);
+    it('should return all customers with total when no filters provided', async () => {
+      customerRepo.findAndCount.mockResolvedValue([mockCustomers, mockCustomers.length]);
 
       const result = await service.findAllCustomers({});
 
-      expect(customerRepo.find).toHaveBeenCalledWith({
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
         where: {},
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
       });
-      expect(result).toEqual(mockCustomers);
+      expect(result).toEqual({ customers: mockCustomers, total: mockCustomers.length });
     });
 
     it('should filter by search matching firstName', async () => {
-      customerRepo.find.mockResolvedValue([mockCustomers[0]]);
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 1]);
 
       const result = await service.findAllCustomers({ search: 'John' });
 
-      expect(customerRepo.find).toHaveBeenCalledWith({
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
         where: expect.arrayContaining([expect.objectContaining({ firstName: expect.any(Object) })]),
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
       });
-      expect(result).toHaveLength(1);
-      expect(result[0].firstName).toBe('John');
+      expect(result.customers).toHaveLength(1);
+      expect(result.customers[0].firstName).toBe('John');
+      expect(result.total).toBe(1);
     });
 
     it('should filter by search matching lastName', async () => {
-      customerRepo.find.mockResolvedValue([mockCustomers[1]]);
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[1]], 1]);
 
       const result = await service.findAllCustomers({ search: 'Smith' });
 
-      expect(customerRepo.find).toHaveBeenCalledWith({
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
         where: expect.arrayContaining([expect.objectContaining({ lastName: expect.any(Object) })]),
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
       });
-      expect(result).toHaveLength(1);
-      expect(result[0].lastName).toBe('Smith');
+      expect(result.customers).toHaveLength(1);
+      expect(result.customers[0].lastName).toBe('Smith');
+      expect(result.total).toBe(1);
     });
 
     it('should filter by search matching email', async () => {
-      customerRepo.find.mockResolvedValue([mockCustomers[0]]);
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 1]);
 
       const result = await service.findAllCustomers({ search: 'john@example.com' });
 
-      expect(customerRepo.find).toHaveBeenCalledWith({
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
         where: expect.arrayContaining([expect.objectContaining({ email: expect.any(Object) })]),
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
       });
-      expect(result).toHaveLength(1);
-      expect(result[0].email).toBe('john@example.com');
+      expect(result.customers).toHaveLength(1);
+      expect(result.customers[0].email).toBe('john@example.com');
+      expect(result.total).toBe(1);
     });
 
     it('should filter by location', async () => {
-      customerRepo.find.mockResolvedValue([mockCustomers[1]]);
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[1]], 1]);
 
       const result = await service.findAllCustomers({ location: CustomerLocation.EAST_MALAYSIA });
 
-      expect(customerRepo.find).toHaveBeenCalledWith({
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
         where: { location: CustomerLocation.EAST_MALAYSIA },
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
       });
-      expect(result).toHaveLength(1);
-      expect(result[0].location).toBe(CustomerLocation.EAST_MALAYSIA);
+      expect(result.customers).toHaveLength(1);
+      expect(result.customers[0].location).toBe(CustomerLocation.EAST_MALAYSIA);
+      expect(result.total).toBe(1);
     });
 
     it('should combine search and location filters', async () => {
-      customerRepo.find.mockResolvedValue([mockCustomers[0]]);
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 1]);
 
       const result = await service.findAllCustomers({
         search: 'John',
         location: CustomerLocation.WEST_MALAYSIA,
       });
 
-      expect(customerRepo.find).toHaveBeenCalledWith({
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
         where: expect.arrayContaining([
           expect.objectContaining({ location: CustomerLocation.WEST_MALAYSIA }),
         ]),
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
       });
-      expect(result).toHaveLength(1);
+      expect(result.customers).toHaveLength(1);
+      expect(result.total).toBe(1);
     });
 
     it('should return empty array when no matches', async () => {
-      customerRepo.find.mockResolvedValue([]);
+      customerRepo.findAndCount.mockResolvedValue([[], 0]);
 
       const result = await service.findAllCustomers({ search: 'NonExistent' });
 
-      expect(result).toEqual([]);
+      expect(result).toEqual({ customers: [], total: 0 });
+    });
+
+    it('should apply pagination with page and limit', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 3]);
+
+      const result = await service.findAllCustomers({}, { page: 2, limit: 1 });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: {},
+        take: 1,
+        skip: 1,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.total).toBe(3);
+    });
+
+    it('should use default pagination when not provided', async () => {
+      customerRepo.findAndCount.mockResolvedValue([mockCustomers, mockCustomers.length]);
+
+      await service.findAllCustomers({});
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: {},
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('should calculate correct skip for page 3 with limit 10', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      await service.findAllCustomers({}, { page: 3, limit: 10 });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: {},
+        take: 10,
+        skip: 20,
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('should filter by firstName (LIKE)', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 1]);
+
+      const result = await service.findAllCustomers({ firstName: 'John' });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: { firstName: expect.any(Object) },
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.customers).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should filter by lastName (LIKE)', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[1]], 1]);
+
+      const result = await service.findAllCustomers({ lastName: 'Smith' });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: { lastName: expect.any(Object) },
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.customers).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should filter by email (LIKE)', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 1]);
+
+      const result = await service.findAllCustomers({ email: 'john@example' });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: { email: expect.any(Object) },
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.customers).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should filter by role (exact match)', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[2]], 1]);
+
+      const result = await service.findAllCustomers({ role: CustomerRole.ADMIN });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: { role: CustomerRole.ADMIN },
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.customers).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should filter by premiumMin only', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 1]);
+
+      const result = await service.findAllCustomers({ premiumMin: 1000 });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: { premiumPaid: expect.any(Object) },
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.customers).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should filter by premiumMax only', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[1], mockCustomers[2]], 2]);
+
+      const result = await service.findAllCustomers({ premiumMax: 500 });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: { premiumPaid: expect.any(Object) },
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.customers).toHaveLength(2);
+      expect(result.total).toBe(2);
+    });
+
+    it('should filter by premiumMin and premiumMax (range)', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 1]);
+
+      const result = await service.findAllCustomers({ premiumMin: 1000, premiumMax: 2000 });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: { premiumPaid: expect.any(Object) },
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.customers).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should combine location and role filters', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 1]);
+
+      const result = await service.findAllCustomers({
+        location: CustomerLocation.WEST_MALAYSIA,
+        role: CustomerRole.CUSTOMER,
+      });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: {
+          location: CustomerLocation.WEST_MALAYSIA,
+          role: CustomerRole.CUSTOMER,
+        },
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.customers).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should combine search with additional filters', async () => {
+      customerRepo.findAndCount.mockResolvedValue([[mockCustomers[0]], 1]);
+
+      const result = await service.findAllCustomers({
+        search: 'John',
+        location: CustomerLocation.WEST_MALAYSIA,
+      });
+
+      expect(customerRepo.findAndCount).toHaveBeenCalledWith({
+        where: expect.arrayContaining([
+          expect.objectContaining({ location: CustomerLocation.WEST_MALAYSIA }),
+        ]),
+        take: 20,
+        skip: 0,
+        order: { createdAt: 'DESC' },
+      });
+      expect(result.customers).toHaveLength(1);
+      expect(result.total).toBe(1);
     });
   });
 

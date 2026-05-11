@@ -19,7 +19,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CustomerResponseDto } from './dto/customer-response.dto';
 import { AdminCustomerDetailDto } from './dto/admin-customer-detail.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { CustomerLocation } from '../entities/enums';
+import { CustomerLocation, CustomerRole } from '../entities/enums';
 import type { Request } from 'express';
 import { JwtUser } from '../auth/jwt.strategy';
 
@@ -152,25 +152,92 @@ export class AdminCustomerController {
 
   @Get()
   @Roles('admin')
-  @ApiOperation({ summary: 'List all customers (admin)' })
+  @ApiOperation({ summary: 'List all customers (admin) with pagination and filters' })
   @ApiQuery({
     name: 'search',
     required: false,
-    description: 'Search by firstName, lastName, or email',
+    description: 'Search across firstName, lastName, email (OR)',
   })
+  @ApiQuery({ name: 'firstName', required: false, description: 'Filter by first name (LIKE)' })
+  @ApiQuery({ name: 'lastName', required: false, description: 'Filter by last name (LIKE)' })
+  @ApiQuery({ name: 'email', required: false, description: 'Filter by email (LIKE)' })
   @ApiQuery({
     name: 'location',
     required: false,
     description: 'Filter by location',
     enum: CustomerLocation,
   })
-  @ApiResponse({ status: 200, description: 'List of customers', type: [CustomerResponseDto] })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    description: 'Filter by role (customer/admin)',
+    enum: CustomerRole,
+  })
+  @ApiQuery({
+    name: 'premiumMin',
+    required: false,
+    description: 'Minimum premium paid',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'premiumMax',
+    required: false,
+    description: 'Maximum premium paid',
+    type: Number,
+  })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)', example: 1 })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default: 20)',
+    example: 20,
+  })
+  @ApiResponse({ status: 200, description: 'Paginated list of customers' })
   @ApiResponse({ status: 403, description: 'Forbidden - requires admin role' })
   async listCustomers(
-    @Query() filters: { search?: string; location?: string },
-  ): Promise<CustomerResponseDto[]> {
-    const customers = await this.customerService.findAllCustomers(filters);
-    return customers.map((c) => CustomerResponseDto.fromEntity(c));
+    @Query()
+    query: {
+      search?: string;
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      location?: string;
+      role?: string;
+      premiumMin?: string;
+      premiumMax?: string;
+      page?: string;
+      limit?: string;
+    },
+  ): Promise<{
+    data: CustomerResponseDto[];
+    meta: { page: number; limit: number; totalItems: number; totalPages: number };
+  }> {
+    const page = parseInt(query.page || '1', 10);
+    const limit = parseInt(query.limit || '20', 10);
+
+    const { customers, total } = await this.customerService.findAllCustomers(
+      {
+        search: query.search,
+        firstName: query.firstName,
+        lastName: query.lastName,
+        email: query.email,
+        location: query.location as CustomerLocation,
+        role: query.role,
+        premiumMin: query.premiumMin ? parseFloat(query.premiumMin) : undefined,
+        premiumMax: query.premiumMax ? parseFloat(query.premiumMax) : undefined,
+      },
+      { page, limit },
+    );
+
+    return {
+      data: customers.map(CustomerResponseDto.fromEntity),
+      meta: {
+        page,
+        limit,
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   @Get(':id')

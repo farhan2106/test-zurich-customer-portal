@@ -49,10 +49,45 @@ export interface UpdateCustomerDto {
   premiumPaid?: number;
 }
 
-export async function getCustomers(search?: string): Promise<Customer[]> {
-  const response = await apiClient.get('/customers', {
-    params: search ? { search } : {},
-  });
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface PaginatedCustomersResponse {
+  data: Customer[];
+  meta: PaginationMeta;
+}
+
+export interface CustomerFilters {
+  search?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  location?: string;
+  role?: string;
+  premiumMin?: number;
+  premiumMax?: number;
+  page?: number;
+  limit?: number;
+}
+
+export async function getCustomers(filters?: CustomerFilters): Promise<PaginatedCustomersResponse> {
+  const params: Record<string, string | number> = {};
+  if (filters?.search) params.search = filters.search;
+  if (filters?.firstName) params.firstName = filters.firstName;
+  if (filters?.lastName) params.lastName = filters.lastName;
+  if (filters?.email) params.email = filters.email;
+  if (filters?.location) params.location = filters.location;
+  if (filters?.role) params.role = filters.role;
+  if (filters?.premiumMin !== undefined) params.premiumMin = filters.premiumMin;
+  if (filters?.premiumMax !== undefined) params.premiumMax = filters.premiumMax;
+  if (filters?.page) params.page = filters.page;
+  if (filters?.limit) params.limit = filters.limit;
+
+  const response = await apiClient.get('/customers', { params });
   return response.data;
 }
 

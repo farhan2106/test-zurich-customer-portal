@@ -1191,70 +1191,117 @@ describe('CustomerController', () => {
       customerService = module.get(CustomerService);
     });
 
-    it('should return 200 with CustomerResponseDto[] for admin', async () => {
-      customerService.findAllCustomers.mockResolvedValue(mockCustomers);
+    it('should return 200 with paginated response { data, meta } for admin', async () => {
+      customerService.findAllCustomers.mockResolvedValue({ customers: mockCustomers, total: 2 });
 
       const result = await adminController.listCustomers({});
 
-      expect(customerService.findAllCustomers).toHaveBeenCalledWith({});
-      expect(result).toBeInstanceOf(Array);
-      expect(result.length).toBe(2);
-      expect(result[0]).toBeInstanceOf(CustomerResponseDto);
-      expect(result[0]).toEqual(mockCustomerResponses[0]);
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith({}, { page: 1, limit: 20 });
+      expect(result.data).toBeInstanceOf(Array);
+      expect(result.data.length).toBe(2);
+      expect(result.data[0]).toBeInstanceOf(CustomerResponseDto);
+      expect(result.data[0]).toEqual(mockCustomerResponses[0]);
+      expect(result.meta).toEqual({
+        page: 1,
+        limit: 20,
+        totalItems: 2,
+        totalPages: 1,
+      });
     });
 
     it('should accept search query param and pass to service', async () => {
-      customerService.findAllCustomers.mockResolvedValue([mockCustomers[0]]);
+      customerService.findAllCustomers.mockResolvedValue({
+        customers: [mockCustomers[0]],
+        total: 1,
+      });
 
       const result = await adminController.listCustomers({ search: 'John' });
 
-      expect(customerService.findAllCustomers).toHaveBeenCalledWith({ search: 'John' });
-      expect(result).toHaveLength(1);
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith(
+        { search: 'John' },
+        { page: 1, limit: 20 },
+      );
+      expect(result.data).toHaveLength(1);
     });
 
     it('should accept location query param and pass to service', async () => {
-      customerService.findAllCustomers.mockResolvedValue([mockCustomers[1]]);
+      customerService.findAllCustomers.mockResolvedValue({
+        customers: [mockCustomers[1]],
+        total: 1,
+      });
 
       const result = await adminController.listCustomers({
         location: CustomerLocation.EAST_MALAYSIA,
       });
 
-      expect(customerService.findAllCustomers).toHaveBeenCalledWith({
-        location: CustomerLocation.EAST_MALAYSIA,
-      });
-      expect(result).toHaveLength(1);
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith(
+        { location: CustomerLocation.EAST_MALAYSIA },
+        { page: 1, limit: 20 },
+      );
+      expect(result.data).toHaveLength(1);
     });
 
     it('should accept both search and location query params', async () => {
-      customerService.findAllCustomers.mockResolvedValue([mockCustomers[0]]);
+      customerService.findAllCustomers.mockResolvedValue({
+        customers: [mockCustomers[0]],
+        total: 1,
+      });
 
       const result = await adminController.listCustomers({
         search: 'John',
         location: CustomerLocation.WEST_MALAYSIA,
       });
 
-      expect(customerService.findAllCustomers).toHaveBeenCalledWith({
-        search: 'John',
-        location: CustomerLocation.WEST_MALAYSIA,
-      });
-      expect(result).toHaveLength(1);
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith(
+        { search: 'John', location: CustomerLocation.WEST_MALAYSIA },
+        { page: 1, limit: 20 },
+      );
+      expect(result.data).toHaveLength(1);
     });
 
     it('should handle default case with no params', async () => {
-      customerService.findAllCustomers.mockResolvedValue(mockCustomers);
+      customerService.findAllCustomers.mockResolvedValue({ customers: mockCustomers, total: 2 });
 
       const result = await adminController.listCustomers({});
 
-      expect(customerService.findAllCustomers).toHaveBeenCalledWith({});
-      expect(result).toHaveLength(2);
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith({}, { page: 1, limit: 20 });
+      expect(result.data).toHaveLength(2);
     });
 
-    it('should return empty array when no customers match', async () => {
-      customerService.findAllCustomers.mockResolvedValue([]);
+    it('should return empty data when no customers match', async () => {
+      customerService.findAllCustomers.mockResolvedValue({ customers: [], total: 0 });
 
       const result = await adminController.listCustomers({ search: 'NonExistent' });
 
-      expect(result).toEqual([]);
+      expect(result.data).toEqual([]);
+      expect(result.meta.totalItems).toBe(0);
+      expect(result.meta.totalPages).toBe(0);
+    });
+
+    it('should accept page and limit query params', async () => {
+      customerService.findAllCustomers.mockResolvedValue({
+        customers: [mockCustomers[0]],
+        total: 5,
+      });
+
+      const result = await adminController.listCustomers({ page: '2', limit: '2' });
+
+      expect(customerService.findAllCustomers).toHaveBeenCalledWith({}, { page: 2, limit: 2 });
+      expect(result.meta).toEqual({
+        page: 2,
+        limit: 2,
+        totalItems: 5,
+        totalPages: 3,
+      });
+    });
+
+    it('should calculate totalPages correctly', async () => {
+      customerService.findAllCustomers.mockResolvedValue({ customers: mockCustomers, total: 25 });
+
+      const result = await adminController.listCustomers({ page: '1', limit: '10' });
+
+      expect(result.meta.totalPages).toBe(3);
+      expect(result.meta.totalItems).toBe(25);
     });
 
     it('should have JwtAuthGuard applied', () => {

@@ -16,30 +16,87 @@ describe('admin.service', () => {
 
   describe('getCustomers', () => {
     it('calls apiClient.get("/customers") with no params by default', async () => {
-      const mockCustomers = [
-        { id: 'usr_1', email: 'john@example.com', firstName: 'John', lastName: 'Doe' },
-        { id: 'usr_2', email: 'jane@example.com', firstName: 'Jane', lastName: 'Smith' },
-      ];
-      mockedApiClient.get.mockResolvedValue({ data: mockCustomers });
+      const mockResponse = {
+        data: [
+          { id: 'usr_1', email: 'john@example.com', firstName: 'John', lastName: 'Doe' },
+          { id: 'usr_2', email: 'jane@example.com', firstName: 'Jane', lastName: 'Smith' },
+        ],
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      };
+      mockedApiClient.get.mockResolvedValue({ data: mockResponse });
 
       const result = await getCustomers();
 
       expect(mockedApiClient.get).toHaveBeenCalledWith('/customers', { params: {} });
-      expect(result).toEqual(mockCustomers);
+      expect(result).toEqual(mockResponse);
     });
 
-    it('calls apiClient.get("/customers") with search param when provided', async () => {
-      const mockCustomers = [
-        { id: 'usr_1', email: 'john@example.com', firstName: 'John', lastName: 'Doe' },
-      ];
-      mockedApiClient.get.mockResolvedValue({ data: mockCustomers });
+    it('calls apiClient.get("/customers") with search, page, and limit params when provided', async () => {
+      const mockResponse = {
+        data: [
+          { id: 'usr_1', email: 'john@example.com', firstName: 'John', lastName: 'Doe' },
+        ],
+        meta: { page: 1, limit: 20, totalItems: 1, totalPages: 1 },
+      };
+      mockedApiClient.get.mockResolvedValue({ data: mockResponse });
 
-      const result = await getCustomers('John');
+      const result = await getCustomers({ search: 'John', page: 1, limit: 20 });
 
       expect(mockedApiClient.get).toHaveBeenCalledWith('/customers', {
-        params: { search: 'John' },
+        params: { search: 'John', page: 1, limit: 20 },
       });
-      expect(result).toEqual(mockCustomers);
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('calls apiClient.get("/customers") with all filter params when provided', async () => {
+      const mockResponse = {
+        data: [
+          { id: 'usr_1', email: 'john@example.com', firstName: 'John', lastName: 'Doe' },
+        ],
+        meta: { page: 1, limit: 10, totalItems: 1, totalPages: 1 },
+      };
+      mockedApiClient.get.mockResolvedValue({ data: mockResponse });
+
+      const result = await getCustomers({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example',
+        location: 'West Malaysia',
+        role: 'customer',
+        premiumMin: 1000,
+        premiumMax: 5000,
+        page: 2,
+        limit: 10,
+      });
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/customers', {
+        params: {
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example',
+          location: 'West Malaysia',
+          role: 'customer',
+          premiumMin: 1000,
+          premiumMax: 5000,
+          page: 2,
+          limit: 10,
+        },
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('omits undefined filter params from request', async () => {
+      const mockResponse = {
+        data: [],
+        meta: { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
+      };
+      mockedApiClient.get.mockResolvedValue({ data: mockResponse });
+
+      await getCustomers({ firstName: 'John', page: 1 });
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/customers', {
+        params: { firstName: 'John', page: 1 },
+      });
     });
 
     it('propagates error on failure', async () => {

@@ -68,6 +68,7 @@ const adminState = {
   },
   admin: {
     customers: mockCustomers,
+    pagination: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
     selectedCustomer: null,
     isLoading: false,
     error: null,
@@ -83,7 +84,10 @@ describe('Admin Customers List Page', () => {
   });
 
   it('renders table with customer data (name, email, location)', async () => {
-    mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
+    mockedAdminService.getCustomers.mockResolvedValue({
+      data: mockCustomers,
+      meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+    });
 
     await act(async () => {
       render(<AdminCustomersPage />, { preloadedState: adminState });
@@ -101,7 +105,10 @@ describe('Admin Customers List Page', () => {
   });
 
   it('renders "View" buttons for each customer row', async () => {
-    mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
+    mockedAdminService.getCustomers.mockResolvedValue({
+      data: mockCustomers,
+      meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+    });
 
     await act(async () => {
       render(<AdminCustomersPage />, { preloadedState: adminState });
@@ -113,16 +120,25 @@ describe('Admin Customers List Page', () => {
     });
   });
 
-  it('shows search input with placeholder "Search customers..."', async () => {
-    mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
+  it('shows filter inputs for firstName, lastName, email, location, role, premium, and search', async () => {
+    mockedAdminService.getCustomers.mockResolvedValue({
+      data: mockCustomers,
+      meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+    });
 
     await act(async () => {
       render(<AdminCustomersPage />, { preloadedState: adminState });
     });
 
     await waitFor(() => {
-      const searchInput = screen.getByPlaceholderText('Search customers...');
-      expect(searchInput).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('First name...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Last name...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Email...')).toBeInTheDocument();
+      expect(screen.getByLabelText('Filter by location')).toBeInTheDocument();
+      expect(screen.getByLabelText('Filter by role')).toBeInTheDocument();
+      expect(screen.getByLabelText('Minimum premium paid')).toBeInTheDocument();
+      expect(screen.getByLabelText('Maximum premium paid')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Search all...')).toBeInTheDocument();
     });
   });
 
@@ -133,6 +149,7 @@ describe('Admin Customers List Page', () => {
       ...adminState,
       admin: {
         customers: [],
+        pagination: { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
         selectedCustomer: null,
         isLoading: true,
         error: null,
@@ -148,12 +165,16 @@ describe('Admin Customers List Page', () => {
   });
 
   it('shows empty state "No customers match your search" when customers=[]', async () => {
-    mockedAdminService.getCustomers.mockResolvedValue([]);
+    mockedAdminService.getCustomers.mockResolvedValue({
+      data: [],
+      meta: { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
+    });
 
     const emptyState = {
       ...adminState,
       admin: {
         customers: [],
+        pagination: { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
         selectedCustomer: null,
         isLoading: false,
         error: null,
@@ -165,7 +186,7 @@ describe('Admin Customers List Page', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/No customers match your search/i)).toBeInTheDocument();
+      expect(screen.getByText(/No customers found/i)).toBeInTheDocument();
     });
   });
 
@@ -178,6 +199,7 @@ describe('Admin Customers List Page', () => {
       ...adminState,
       admin: {
         customers: [],
+        pagination: { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
         selectedCustomer: null,
         isLoading: false,
         error: null,
@@ -200,7 +222,10 @@ describe('Admin Customers List Page', () => {
   });
 
   it('renders mobile card view with customer cards', async () => {
-    mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
+    mockedAdminService.getCustomers.mockResolvedValue({
+      data: mockCustomers,
+      meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+    });
 
     await act(async () => {
       render(<AdminCustomersPage />, { preloadedState: adminState });
@@ -213,7 +238,10 @@ describe('Admin Customers List Page', () => {
   });
 
   it('renders within admin layout context (page renders successfully)', async () => {
-    mockedAdminService.getCustomers.mockResolvedValue(mockCustomers);
+    mockedAdminService.getCustomers.mockResolvedValue({
+      data: mockCustomers,
+      meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+    });
 
     await act(async () => {
       render(<AdminCustomersPage />, { preloadedState: adminState });

@@ -6,6 +6,7 @@ import adminReducer, {
   selectAllCustomers,
   selectCustomerById,
   selectAdminLoadingState,
+  selectCustomersPagination,
 } from './adminSlice';
 
 jest.mock('@/services/admin.service', () => ({
@@ -76,10 +77,11 @@ const mockCustomerDetail = {
 
 describe('adminSlice', () => {
   describe('initial state', () => {
-    it('should have initial state { customers: [], selectedCustomer: null, isLoading: false, error: null }', () => {
+    it('should have initial state with pagination', () => {
       const store = createTestStore();
       expect(store.getState().admin).toEqual({
         customers: [],
+        pagination: { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
         selectedCustomer: null,
         isLoading: false,
         error: null,
@@ -98,13 +100,17 @@ describe('adminSlice', () => {
       expect(state.error).toBeNull();
     });
 
-    it('sets customers to payload and isLoading: false on fulfilled', () => {
+    it('sets customers to payload.data, pagination to payload.meta, and isLoading: false on fulfilled', () => {
       const store = createTestStore();
       store.dispatch(fetchCustomers.pending('req-1'));
 
+      const paginatedPayload = {
+        data: [mockCustomer, mockCustomer2],
+        meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+      };
       store.dispatch(
         fetchCustomers.fulfilled(
-          [mockCustomer, mockCustomer2],
+          paginatedPayload,
           'req-1',
           undefined
         )
@@ -112,6 +118,7 @@ describe('adminSlice', () => {
 
       const state = store.getState().admin;
       expect(state.customers).toEqual([mockCustomer, mockCustomer2]);
+      expect(state.pagination).toEqual({ page: 1, limit: 20, totalItems: 2, totalPages: 1 });
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -193,7 +200,10 @@ describe('adminSlice', () => {
       // Pre-populate customers
       store.dispatch(
         fetchCustomers.fulfilled(
-          [mockCustomer, mockCustomer2],
+          {
+            data: [mockCustomer, mockCustomer2],
+            meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+          },
           'req-1',
           undefined
         )
@@ -283,6 +293,7 @@ describe('adminSlice', () => {
         preloadedState: {
           admin: {
             customers: [mockCustomer, mockCustomer2],
+            pagination: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
             selectedCustomer: null,
             isLoading: false,
             error: null,
@@ -296,12 +307,35 @@ describe('adminSlice', () => {
       ]);
     });
 
+    it('selectCustomersPagination returns pagination state', () => {
+      const store = configureStore({
+        reducer: { admin: adminReducer },
+        preloadedState: {
+          admin: {
+            customers: [mockCustomer],
+            pagination: { page: 2, limit: 10, totalItems: 25, totalPages: 3 },
+            selectedCustomer: null,
+            isLoading: false,
+            error: null,
+          },
+        },
+      });
+
+      expect(selectCustomersPagination(store.getState())).toEqual({
+        page: 2,
+        limit: 10,
+        totalItems: 25,
+        totalPages: 3,
+      });
+    });
+
     it('selectCustomerById returns matching customer when exists', () => {
       const store = configureStore({
         reducer: { admin: adminReducer },
         preloadedState: {
           admin: {
             customers: [mockCustomer, mockCustomer2],
+            pagination: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
             selectedCustomer: null,
             isLoading: false,
             error: null,
@@ -320,6 +354,7 @@ describe('adminSlice', () => {
         preloadedState: {
           admin: {
             customers: [mockCustomer],
+            pagination: { page: 1, limit: 20, totalItems: 1, totalPages: 1 },
             selectedCustomer: null,
             isLoading: false,
             error: null,
@@ -336,6 +371,7 @@ describe('adminSlice', () => {
         preloadedState: {
           admin: {
             customers: [],
+            pagination: { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
             selectedCustomer: null,
             isLoading: true,
             error: 'Network error',

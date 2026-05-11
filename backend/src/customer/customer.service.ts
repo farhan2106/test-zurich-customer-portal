@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository, Like, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm';
 import { Product } from '../entities/product.entity';
 import { Policy } from '../entities/policy.entity';
 import { Customer } from '../entities/customer.entity';
@@ -191,26 +191,63 @@ export class CustomerService {
     });
   }
 
-  async findAllCustomers(filters?: { search?: string; location?: string }): Promise<Customer[]> {
+  async findAllCustomers(
+    filters?: {
+      search?: string;
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      location?: string;
+      role?: string;
+      premiumMin?: number;
+      premiumMax?: number;
+    },
+    pagination?: { page?: number; limit?: number },
+  ): Promise<{ customers: Customer[]; total: number }> {
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 20;
+    const skip = (page - 1) * limit;
+
     const where: any = {};
 
-    if (filters?.location) {
-      where.location = filters.location;
+    // Individual field filters (exact/LIKE)
+    if (filters?.firstName) where.firstName = Like(`%${filters.firstName}%`);
+    if (filters?.lastName) where.lastName = Like(`%${filters.lastName}%`);
+    if (filters?.email) where.email = Like(`%${filters.email}%`);
+    if (filters?.location) where.location = filters.location;
+    if (filters?.role) where.role = filters.role;
+
+    // Premium range filter
+    if (filters?.premiumMin !== undefined && filters?.premiumMax !== undefined) {
+      where.premiumPaid = Between(filters.premiumMin, filters.premiumMax);
+    } else if (filters?.premiumMin !== undefined) {
+      where.premiumPaid = MoreThanOrEqual(filters.premiumMin);
+    } else if (filters?.premiumMax !== undefined) {
+      where.premiumPaid = LessThanOrEqual(filters.premiumMax);
     }
 
+    // "search" is a convenience that OR-searches across name+email
     if (filters?.search) {
-      return this.customerRepository.find({
+      const [customers, total] = await this.customerRepository.findAndCount({
         where: [
           { ...where, firstName: Like(`%${filters.search}%`) },
           { ...where, lastName: Like(`%${filters.search}%`) },
           { ...where, email: Like(`%${filters.search}%`) },
         ],
+        take: limit,
+        skip,
+        order: { createdAt: 'DESC' },
       });
+      return { customers, total };
     }
 
-    return this.customerRepository.find({
+    const [customers, total] = await this.customerRepository.findAndCount({
       where,
+      take: limit,
+      skip,
+      order: { createdAt: 'DESC' },
     });
+    return { customers, total };
   }
 
   async findCustomerById(id: string): Promise<Customer> {
